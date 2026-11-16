@@ -6,14 +6,6 @@ import logoNavy from '../brand/logo-navy.svg?raw';
 import logoWhite from '../brand/logo-white.svg?raw';
 import icon from '../brand/icon.svg?raw';
 import pick from '../brand/pick.json';
-import logoD from '../brand/concepts/logo-d.svg?raw';
-import iconD from '../brand/concepts/icon-d.svg?raw';
-import logoA from '../brand/concepts/logo-a.svg?raw';
-import logoB from '../brand/concepts/logo-b.svg?raw';
-import logoC from '../brand/concepts/logo-c.svg?raw';
-import iconA from '../brand/concepts/icon-a.svg?raw';
-import iconB from '../brand/concepts/icon-b.svg?raw';
-import iconC from '../brand/concepts/icon-c.svg?raw';
 
 // Every pair is shown large, small, on gold-soft, and as a square icon at 64, 32 and 16 px.
 const pair = (art: string, mark: string) => [
@@ -32,13 +24,22 @@ const chosen = [
   { tile: 'i32', art: icon },
   { tile: 'i16', art: icon },
 ];
-const concepts = [
-  { id: 'D', name: 'The dimension mark', note: 'A navy stem and a gold chevron: an engineering dimension mark |<. The icon is |<—>|.', tiles: pair(logoD, iconD) },
-  { id: 'A', name: 'The lens', note: 'Gold magnifier ring with a crosshair: 10x/30x inspection.', tiles: pair(logoA, iconA) },
-  { id: 'B', name: 'The clean edge', note: 'A gold sliver trimmed off the K: precise handwork.', tiles: pair(logoB, iconB) },
-  { id: 'C', name: 'The route', note: 'Factory → homes → inspection → back: the daily loop.', tiles: pair(logoC, iconC) },
-];
-const picked = concepts.find((c) => c.id.toLowerCase() === pick.pick);
+// One concept per file in brand/concepts: adding concept E there adds it here (and needs a line below).
+const svgs = import.meta.glob('../brand/concepts/*.svg', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
+const about: Record<string, { name: string; note: string }> = {
+  a: { name: 'The lens', note: 'Gold magnifier ring with a crosshair: 10x/30x inspection.' },
+  b: { name: 'The clean edge', note: 'A gold sliver trimmed off the K: precise handwork.' },
+  c: { name: 'The route', note: 'Factory → homes → inspection → back: the daily loop.' },
+  d: { name: 'The dimension mark', note: 'A navy stem and a gold chevron: an engineering dimension mark |<. The icon is |<—>|.' },
+};
+const ids = Object.keys(svgs).flatMap((f) => f.match(/logo-(\w+)\.svg$/)?.[1] ?? []).sort();
+// The pick first, then the rest in order.
+const concepts = [pick.pick, ...ids.filter((id) => id !== pick.pick)].map((id) => ({
+  id: id.toUpperCase(),
+  ...about[id],
+  tiles: pair(svgs[`../brand/concepts/logo-${id}.svg`], svgs[`../brand/concepts/icon-${id}.svg`]),
+}));
+const picked = concepts[0];
 ---
 <html lang="en">
   <head>

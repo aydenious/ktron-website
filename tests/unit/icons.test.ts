@@ -2,6 +2,27 @@ import { readFileSync } from 'node:fs';
 import sharp from 'sharp';
 import { describe, expect, it } from 'vitest';
 import { pngsToIco } from '../../scripts/ico.mjs';
+import { renderIcons } from '../../scripts/make-icons.mjs';
+
+const raw = (png: Buffer) => sharp(png).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+
+/** Two PNGs hold the same picture, within a small per-channel tolerance for rasteriser rounding. */
+async function expectSamePixels(saved: Buffer, fresh: Buffer) {
+  const [a, b] = await Promise.all([raw(saved), raw(fresh)]);
+  expect([a.info.width, a.info.height]).toEqual([b.info.width, b.info.height]);
+  let worst = 0;
+  for (let i = 0; i < a.data.length; i++) worst = Math.max(worst, Math.abs(a.data[i] - b.data[i]));
+  expect(worst).toBeLessThanOrEqual(8);
+}
+
+/** The PNG bytes of the entry of this size in an ICO file. */
+function icoImage(ico: Buffer, size: number) {
+  for (let i = 0; i < ico.readUInt16LE(4); i++) {
+    const entry = 6 + i * 16;
+    if (ico.readUInt8(entry) === size) return ico.subarray(ico.readUInt32LE(entry + 12), ico.readUInt32LE(entry + 12) + ico.readUInt32LE(entry + 8));
+  }
+  throw new Error(`no ${size} px image in the ICO`);
+}
 
 describe('pngsToIco', () => {
   it('writes an ICO header, one entry per image and the PNG bytes', () => {
@@ -31,13 +52,14 @@ describe('generated icons', () => {
     for (const [x, y] of [[0, 0], [info.width - 1, 0], [0, info.height - 1], [info.width - 1, info.height - 1]]) expect(alphaAt(x, y)).toBe(255);
   });
 
-  it('favicon-32.png is the current icon.svg rendered at 32 px', async () => {
-    const raw = (input: string | Buffer) => sharp(input, { density: 512 }).resize(32, 32).ensureAlpha().raw().toBuffer();
-    const [fresh, saved] = await Promise.all([raw(readFileSync('src/brand/icon.svg')), raw('public/favicon-32.png')]);
-    expect(fresh.length).toBe(saved.length);
-    let worst = 0;
-    for (let i = 0; i < fresh.length; i++) worst = Math.max(worst, Math.abs(fresh[i] - saved[i]));
-    expect(worst).toBeLessThanOrEqual(8);
+  it.each(['public/favicon-32.png', 'public/apple-touch-icon.png', 'public/icon-512.png'])('%s is the current icon.svg render', async (file) => {
+    const fresh = (await renderIcons(readFileSync('src/brand/icon.svg')))[file];
+    await expectSamePixels(readFileSync(file), fresh);
+  });
+
+  it.each([16, 32, 48])('favicon.ico holds a current %i px image', async (size) => {
+    const fresh = (await renderIcons(readFileSync('src/brand/icon.svg')))['public/favicon.ico'];
+    await expectSamePixels(icoImage(readFileSync('public/favicon.ico'), size), icoImage(fresh, size));
   });
 
   it('favicon.ico holds 16, 32 and 48 px images', () => {

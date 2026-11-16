@@ -1,9 +1,12 @@
-import { readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { NAVY, WHITE, toMono } from '../../scripts/pick-logo.mjs';
+import { NAVY, PICKS, WHITE, toMono } from '../../scripts/pick-logo.mjs';
 
 const PALETTE = new Set(['#0b2545', '#13315c', '#c9a227', '#ffffff', 'none', 'currentcolor']);
-const concepts = ['a', 'b', 'c', 'd'].map((id) => ({ id, svg: readFileSync(`src/brand/concepts/logo-${id}.svg`, 'utf8') }));
+const concepts = PICKS.map((id) => ({ id, svg: readFileSync(`src/brand/concepts/logo-${id}.svg`, 'utf8') }));
 const paints = (svg: string) => [...svg.matchAll(/\b(?:fill|stroke)="([^"]+)"/g)].map((m) => m[1].toUpperCase());
 const count = (svg: string, what: RegExp) => svg.match(what)?.length ?? 0;
 
@@ -35,10 +38,37 @@ describe('the one-colour derivation every concept goes through', () => {
     expect(radii).toEqual([r + width / 2, r - width / 2]);
   });
 
-  it('stops on a white path, rect or polygon, which would merge with the artwork', () => {
-    for (const shape of ['<path fill="#FFFFFF" d="M0 0H4V4Z"/>', '<rect fill="#ffffff" width="4" height="4"/>', '<polygon fill="#FFFFFF" points="0,0 4,0 4,4"/>']) {
-      expect(() => toMono(`<svg viewBox="0 0 8 8">${shape}</svg>`, NAVY)).toThrow(/white/);
-    }
+  const WHITES = [
+    '<path fill="#FFFFFF" d="M0 0H4V4Z"/>',
+    '<rect fill="#ffffff" width="4" height="4"/>',
+    '<polygon fill="#FFFFFF" points="0,0 4,0 4,4"/>',
+    '<path fill="#fff" d="M0 0H4V4Z"/>',
+    '<path fill="white" d="M0 0H4V4Z"/>',
+    '<path fill="WHITE" d="M0 0H4V4Z"/>',
+    "<path fill='#FFFFFF' d='M0 0H4V4Z'/>",
+    '<path fill = "#FFFFFF" d="M0 0H4V4Z"/>',
+    '<path style="fill:#FFFFFF" d="M0 0H4V4Z"/>',
+    '<path style="stroke: #fff; fill: none" d="M0 0H4V4Z"/>',
+    '<path fill="none" stroke="#FFFFFF" d="M0 0H4V4Z"/>',
+    "<path fill='none' stroke='white' d='M0 0H4V4Z'/>",
+  ];
+  it.each(WHITES)('stops on a white shape, however it is written: %s', (shape) => {
+    expect(() => toMono(`<svg viewBox="0 0 8 8">${shape}</svg>`, NAVY)).toThrow(/white/);
+  });
+
+  it.each(['fill="#FFFFFF"', "fill='#fff'", 'fill = "white"', 'style="fill:#FFFFFF"'])('cuts a stroked white circle written as %s', (fill) => {
+    const mono = toMono(`<svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="6" ${fill} stroke="#C9A227" stroke-width="2"/></svg>`, NAVY);
+    expect(mono).toMatch(/fill-rule="evenodd"/);
+    expect(mono).not.toMatch(/<circle/);
+  });
+
+  it('writes nothing when a concept cannot be derived', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'pick-'));
+    mkdirSync(join(dir, 'src/brand/concepts'), { recursive: true });
+    writeFileSync(join(dir, 'src/brand/concepts/logo-a.svg'), '<svg viewBox="0 0 8 8"><path fill="#FFFFFF" d="M0 0H4V4Z"/></svg>');
+    writeFileSync(join(dir, 'src/brand/concepts/icon-a.svg'), '<svg viewBox="0 0 8 8"/>');
+    expect(() => execFileSync(process.execPath, [resolve('scripts/pick-logo.mjs'), 'a'], { cwd: dir, stdio: 'pipe' })).toThrow();
+    expect(readdirSync(join(dir, 'src/brand')).sort()).toEqual(['concepts']);
   });
 
   it('stops on a white shape it cannot cut', () => {
@@ -46,11 +76,17 @@ describe('the one-colour derivation every concept goes through', () => {
   });
 });
 
+describe('the list of concepts', () => {
+  const ids = (prefix: string) => readdirSync('src/brand/concepts').filter((f) => f.startsWith(prefix)).map((f) => f.slice(prefix.length, -'.svg'.length)).sort();
+  it('has a logo file for every pick and no other', () => expect(ids('logo-')).toEqual([...PICKS].sort()));
+  it('has an icon file for every pick and no other', () => expect(ids('icon-')).toEqual([...PICKS].sort()));
+});
+
 describe('the committed brand files follow the recorded pick', () => {
   const read = (f: string) => readFileSync(`src/brand/${f}`, 'utf8');
   const { pick } = JSON.parse(read('pick.json')) as { pick: string };
 
-  it('records a known concept', () => expect(['a', 'b', 'c', 'd']).toContain(pick));
+  it('records a known concept', () => expect(PICKS).toContain(pick));
   it('logo.svg is the picked logo', () => expect(read('logo.svg')).toBe(read(`concepts/logo-${pick}.svg`)));
   it('icon.svg is the picked icon', () => expect(read('icon.svg')).toBe(read(`concepts/icon-${pick}.svg`)));
   it('logo-navy.svg is the derived navy logo', () => expect(read('logo-navy.svg')).toBe(toMono(read('logo.svg'), NAVY)));
