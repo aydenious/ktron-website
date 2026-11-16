@@ -25,6 +25,21 @@ describe('generated icons', () => {
     expect([meta.width, meta.height]).toEqual([size, size]);
   });
 
+  it.each(['public/apple-touch-icon.png', 'public/icon-512.png'])('%s is full-bleed, so iOS paints no black corners', async (file) => {
+    const { data, info } = await sharp(file).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+    const alphaAt = (x: number, y: number) => data[(y * info.width + x) * info.channels + info.channels - 1];
+    for (const [x, y] of [[0, 0], [info.width - 1, 0], [0, info.height - 1], [info.width - 1, info.height - 1]]) expect(alphaAt(x, y)).toBe(255);
+  });
+
+  it('favicon-32.png is the current icon.svg rendered at 32 px', async () => {
+    const raw = (input: string | Buffer) => sharp(input, { density: 512 }).resize(32, 32).ensureAlpha().raw().toBuffer();
+    const [fresh, saved] = await Promise.all([raw(readFileSync('src/brand/icon.svg')), raw('public/favicon-32.png')]);
+    expect(fresh.length).toBe(saved.length);
+    let worst = 0;
+    for (let i = 0; i < fresh.length; i++) worst = Math.max(worst, Math.abs(fresh[i] - saved[i]));
+    expect(worst).toBeLessThanOrEqual(8);
+  });
+
   it('favicon.ico holds 16, 32 and 48 px images', () => {
     const ico = readFileSync('public/favicon.ico');
     expect(ico.readUInt16LE(4)).toBe(3);

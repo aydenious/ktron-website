@@ -5,6 +5,9 @@ import logo from '../brand/logo.svg?raw';
 import logoNavy from '../brand/logo-navy.svg?raw';
 import logoWhite from '../brand/logo-white.svg?raw';
 import icon from '../brand/icon.svg?raw';
+import pick from '../brand/pick.json';
+import logoD from '../brand/concepts/logo-d.svg?raw';
+import iconD from '../brand/concepts/icon-d.svg?raw';
 import logoA from '../brand/concepts/logo-a.svg?raw';
 import logoB from '../brand/concepts/logo-b.svg?raw';
 import logoC from '../brand/concepts/logo-c.svg?raw';
@@ -30,10 +33,12 @@ const chosen = [
   { tile: 'i16', art: icon },
 ];
 const concepts = [
+  { id: 'D', name: 'The dimension mark', note: 'A navy stem and a gold chevron: an engineering dimension mark |<. The icon is |<—>|.', tiles: pair(logoD, iconD) },
   { id: 'A', name: 'The lens', note: 'Gold magnifier ring with a crosshair: 10x/30x inspection.', tiles: pair(logoA, iconA) },
   { id: 'B', name: 'The clean edge', note: 'A gold sliver trimmed off the K: precise handwork.', tiles: pair(logoB, iconB) },
   { id: 'C', name: 'The route', note: 'Factory → homes → inspection → back: the daily loop.', tiles: pair(logoC, iconC) },
 ];
+const picked = concepts.find((c) => c.id.toLowerCase() === pick.pick);
 ---
 <html lang="en">
   <head>
@@ -56,12 +61,12 @@ const concepts = [
       <h1>KTRON brand</h1>
       <p>Final set: full colour, one-colour navy, one-colour white on navy, and the square icon at 64, 32 and 16 px.</p>
       <section class="concept">
-        <h2>Final set (A, the lens)</h2>
+        <h2>Final set ({picked?.id}, {picked?.name.toLowerCase()})</h2>
         <div class="row">{chosen.map((t) => <div class={`tile ${t.tile}`} set:html={t.art} />)}</div>
       </section>
       <h2>Concepts</h2>
       <p>
-        All three stay here so you can still choose. <code>npm run brand:pick a|b|c</code> rebuilds the final set from
+        All four stay here so you can still choose. <code>npm run brand:pick a|b|c|d</code> rebuilds the final set from
         one of them, then regenerates the favicon set from its icon.
       </p>
       {concepts.map((c) => (
