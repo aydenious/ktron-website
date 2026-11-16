@@ -4,7 +4,7 @@ import zh from '../../src/i18n/zh.json';
 import { PHOTO_POSITION } from '../../src/assets/photos';
 import { page } from './dist';
 
-const ORDER = ['top', 'why', 'services', 'traceability', 'numbers', 'quality', 'area', 'faq', 'contact'];
+const ORDER = ['top', 'why', 'services', 'how', 'traceability', 'numbers', 'quality', 'area', 'faq', 'contact'];
 const SERVICES = ['trimming', 'deflashing', 'inspection', 'sorting', 'rework'] as const;
 
 describe.each([['/', en], ['/zh/', zh]] as const)('%s sections', (path, s) => {
