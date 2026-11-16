@@ -6,28 +6,29 @@
 
 ## Measured
 
-Every number below is from `git ls-files` on 2026-11-16, `package-lock.json` excluded (it is 7,243
+Every number below is from `git ls-files` on 2026-11-16, `package-lock.json` excluded (it is 7,278
 generated lines). `npm run quality -- --print` gave the counts in the Gates table.
 
 | Area | Files | Lines |
 |---|---|---|
 | Production: `src/` (one page, two stylesheets) | 3 | 53 |
 | Production: `scripts/` (the count gate) | 1 | 125 |
-| Production: config and CI (package.json, ci.yml, astro/vitest/knip config, .gitignore, .nvmrc, PR template) | 9 | 125 |
+| Production: config and CI (package.json, ci.yml, astro/vitest/knip config, .gitignore, .nvmrc, .npmrc, PR template) | 10 | 126 |
 | Generated: `scripts/quality-baseline.json` | 1 | 60 |
 | Tests: `tests/unit/` | 3 | 79 |
 | Tests: `tests/dist/` | 1 | 17 |
-| Docs: HARNESS, CLAUDE.md, README | 3 | 213 |
-| **Hand-written production total** | 13 | **303** |
+| Docs: HARNESS, CLAUDE.md, README | 3 | 217 |
+| **Hand-written production total** | 14 | **304** |
 
-Five biggest files: package-lock.json (7,243, generated), `docs/HARNESS.md` (168), `scripts/quality.mjs`
+Five biggest files: package-lock.json (7,278, generated), `docs/HARNESS.md` (168), `scripts/quality.mjs`
 (125), `scripts/quality-baseline.json` (60, generated), `tests/unit/quality.test.ts` (51).
 
-CI time: filled in after the first run
+CI time, first green run (PR 1, GitHub-hosted ubuntu-24.04): `site` 23 s, `quality` 21 s, run in
+parallel, so about 25 s from push to result.
 
 ## Size judgement
 
-At this point the repo is a scaffold: 303 hand-written production lines, 96 test lines, 213 doc
+At this point the repo is a scaffold: 304 hand-written production lines, 96 test lines, 217 doc
 lines, no application logic beyond one placeholder page. The plan expects roughly 3–4k lines of
 components, styles, scene and tests for the finished bilingual page, which is a reasonable size for
 a static site with a scroll-driven animation and two languages; the harness should hold that
@@ -61,9 +62,9 @@ counts files, so a big scene file has to be split rather than baselined.
 Two adoption decisions worth knowing:
 
 - **knip flags no dependency today.** Task 1 installed `sharp` and `simple-icons`, which nothing
-  imported yet; both were removed so the dead-code ratchet starts at zero. Task 3's icon script
-  imports sharp and Task 5 imports simple-icons, so each of those tasks installs its dependency with
-  `--save-exact` when it first uses it.
+  imported yet; both were removed so the dead-code ratchet starts at zero. The first task to
+  import each installs it with `--save-exact`: sharp in Task 3 (the icon script), simple-icons in
+  Task 5 (the footer icons).
 - **one narrow knip ignore:** `jscpd` in `knip.json`, because the gate runs it as
   `npx --no-install jscpd`, a string knip cannot resolve. It is a false positive of the tool, not a
   baselined finding.
