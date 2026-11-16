@@ -23,7 +23,7 @@ generated lines). `npm run quality -- --print` gave the counts in the Gates tabl
 Five biggest files: package-lock.json (7,243, generated), `docs/HARNESS.md` (168), `scripts/quality.mjs`
 (125), `scripts/quality-baseline.json` (60, generated), `tests/unit/quality.test.ts` (51).
 
-CI time per job: filled in after the first run.
+CI time: filled in after the first run
 
 ## Size judgement
 
