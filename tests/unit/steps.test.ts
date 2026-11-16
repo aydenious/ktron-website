@@ -45,6 +45,8 @@ describe('scene model (PRD §6)', () => {
   });
   it('the van never jumps: no sample moves further than the fastest segment allows', () => {
     const margin = 0.2; // vanX is rounded to 0.1 at both ends of a step
+    // a literal budget too: MAX_SPEED moves with the frames, so a faster hop must fail here
+    expect(MAX_SPEED).toBeLessThanOrEqual(1850);
     const limit = MAX_SPEED * 0.01 + margin;
     for (let i = 1; i < samples.length; i++) {
       expect(Math.abs(stateAt(samples[i]).vanX - stateAt(samples[i - 1]).vanX), `t=${samples[i]}`).toBeLessThanOrEqual(limit);
@@ -84,6 +86,7 @@ describe('scene model (PRD §6)', () => {
   it('five stills, one per step, the third at night', () => {
     expect(STILLS).toEqual([0, 2, 2.25, 4, 5].map(stateAt));
     expect(STILLS[2].night).toBe(1);
+    expect(STILLS.map((s) => s.facing)).toEqual([1, 1, 1, 1, -1]);
     expect(view.night(STILLS[2])).toBe(0.85);
     expect(view.vanBody(stateAt(4.5))).toBe('scale(-1 1)');
     expect(view.world(stateAt(4))).toBe('translate(-240 0)');
