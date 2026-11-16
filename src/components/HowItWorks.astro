@@ -23,8 +23,25 @@ const { lang } = Astro.props;
     </ol>
   </div>
 </section>
+<script>
+  const section = document.querySelector<HTMLElement>('section[data-how]');
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // On a failed download there is nothing to undo: the five stills are the page's own fallback.
+  function keepStills(): void {
+    // setup never ran, so the list was never hidden and no stage was made.
+  }
+  if (section && !still && 'IntersectionObserver' in window) {
+    const io = new IntersectionObserver((entries) => {
+      if (!entries.some((e) => e.isIntersecting)) return;
+      io.disconnect();
+      import('./scene/animate').then(({ setup }) => setup(section), keepStills);
+    }, { rootMargin: '200px 0px' });
+    io.observe(section);
+  }
+</script>
 <style>
   .how { padding: 64px 0; }
+  .how :global(.stage) { min-height: calc(100svh - 64px); display: grid; align-content: center; padding-block: 16px; }
   .stills { list-style: none; padding: 0; margin: 24px 0 0; display: grid; gap: 40px; }
   figure { margin: 0; display: grid; gap: 14px; }
   figure :global(svg.scene) { width: 100%; height: auto; border-radius: var(--radius); }
