@@ -1,0 +1,53 @@
+---
+import '@fontsource-variable/manrope';
+import '../styles/global.css';
+import logoA from '../brand/concepts/logo-a.svg?raw';
+import logoB from '../brand/concepts/logo-b.svg?raw';
+import logoC from '../brand/concepts/logo-c.svg?raw';
+import iconA from '../brand/concepts/icon-a.svg?raw';
+import iconB from '../brand/concepts/icon-b.svg?raw';
+import iconC from '../brand/concepts/icon-c.svg?raw';
+
+const concepts = [
+  { id: 'A', name: 'The lens', note: 'Gold magnifier ring with a crosshair: 10x/30x inspection.', logo: logoA, icon: iconA },
+  { id: 'B', name: 'The clean edge', note: 'A gold sliver trimmed off the K: precise handwork.', logo: logoB, icon: iconB },
+  { id: 'C', name: 'The route', note: 'Factory → homes → inspection → back: the daily loop.', logo: logoC, icon: iconC },
+];
+---
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>KTRON logo concepts</title>
+    <style>
+      .concept { padding: 32px 0; border-bottom: 1px solid var(--grey-1); }
+      .row { display: flex; flex-wrap: wrap; gap: 24px; align-items: center; }
+      .tile { padding: 24px; border-radius: var(--radius); background: #fff; }
+      .tile.soft { background: var(--gold-soft); }
+      .w320 :global(svg) { width: 320px; } .w160 :global(svg) { width: 160px; } .w80 :global(svg) { width: 80px; }
+      .i64 :global(svg) { width: 64px; } .i32 :global(svg) { width: 32px; } .i16 :global(svg) { width: 16px; }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <h1>KTRON logo concepts</h1>
+      <p>Pick one: A, B or C. Each is shown large, small, on gold-soft, and as a square icon at 64, 32 and 16 px.</p>
+      {concepts.map((c) => (
+        <section class="concept">
+          <h2>{c.id}. {c.name}</h2>
+          <p>{c.note}</p>
+          <div class="row">
+            <div class="tile w320" set:html={c.logo} />
+            <div class="tile w160" set:html={c.logo} />
+            <div class="tile soft w80" set:html={c.logo} />
+            <div class="tile i64" set:html={c.icon} />
+            <div class="tile i32" set:html={c.icon} />
+            <div class="tile i16" set:html={c.icon} />
+          </div>
+        </section>
+      ))}
+    </main>
+  </body>
+</html>
+

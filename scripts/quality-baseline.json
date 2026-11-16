@@ -1,8 +1,8 @@
 {
   "metrics": {
-    "pattern.hex_colour_outside_tokens": 0,
+    "pattern.hex_colour_outside_tokens": 1,
     "pattern.colour_function_outside_tokens": 0,
-    "pattern.set_html": 0,
+    "pattern.set_html": 6,
     "pattern.console_in_src": 0,
     "pattern.swallowed_error": 0,
     "pattern.risky_dom": 0,
@@ -67,6 +67,16 @@
       "date": "2026-11-16",
       "change": "pattern.risky_dom: new → 0",
       "reason": "new metrics pattern.colour_function_outside_tokens and pattern.risky_dom"
+    },
+    {
+      "date": "2026-11-16",
+      "change": "pattern.hex_colour_outside_tokens: 0 → 1",
+      "reason": "brand preview page (plan Task 2): inline concept SVGs use set:html and the tile background uses #fff; the page and its raw colour are removed at launch (plan ruling 10)"
+    },
+    {
+      "date": "2026-11-16",
+      "change": "pattern.set_html: 0 → 6",
+      "reason": "brand preview page (plan Task 2): inline concept SVGs use set:html and the tile background uses #fff; the page and its raw colour are removed at launch (plan ruling 10)"
     }
   ]
 }
