@@ -30,12 +30,14 @@ function painter(svg: SVGSVGElement): (s: SceneState) => void {
 
 /** How the reader got here, decided by the loader before the script was fetched. */
 interface Arrival {
-  /** The fragment target of the page load that is still scrolling there; null for any other way of arriving. */
+  /** The fragment target of the page load, if this was a fresh navigation (null for back, reload or a typed-in page). */
   deepLink: Element | null;
-  /** The target of a header link clicked, whose smooth scroll is still running; null otherwise. */
-  linkTarget: Element | null;
-  /** True while the reader has done nothing since the load, so the page's own scroll may still be landing. */
+  /** The target of a header link clicked and not yet followed by any input, read when setup runs (null otherwise). */
+  linkTarget: () => Element | null;
+  /** True while the reader has done nothing since the load and the page's own scroll may still be landing. */
   arriving: () => boolean;
+  /** Runs the callback once arriving() has turned false (the first input, or the time limit). */
+  whenOver: (done: () => void) => void;
 }
 
 /** Turns the five stills of section#how into one pinned scene scrubbed by scrolling. */
@@ -53,7 +55,9 @@ export function setup(section: HTMLElement, arrival: Arrival): void {
   const root = document.documentElement;
   root.style.scrollBehavior = 'auto';
   root.style.overflowAnchor = 'none';
-  const { deepLink, linkTarget, arriving } = arrival;
+  // setup runs after the script has downloaded: the reader may have acted since the loader decided.
+  const deepLink = arrival.arriving() ? arrival.deepLink : null;
+  const linkTarget = arrival.linkTarget();
   // A deep link's own scroll is still running here and the growth below would abort it, leaving the
   // reader short of the target. Finish it first, at once.
   if (deepLink && deepLink.getBoundingClientRect().top > innerHeight) deepLink.scrollIntoView({ behavior: 'instant', block: 'start' });
@@ -117,11 +121,9 @@ export function setup(section: HTMLElement, arrival: Arrival): void {
   if (deepLink) {
     // The browser's smooth scroll can still deliver a last frame measured before the growth. Whenever a
     // scroll ends while the reader is still arriving, put the target back (a no-op once it is there).
-    const settle = () => {
-      if (!arriving()) return removeEventListener('scrollend', settle);
-      deepLink.scrollIntoView({ behavior: 'instant', block: 'start' });
-    };
+    const settle = () => deepLink.scrollIntoView({ behavior: 'instant', block: 'start' });
     addEventListener('scrollend', settle);
+    arrival.whenOver(() => removeEventListener('scrollend', settle));
   }
   if (reaim) linkTarget.scrollIntoView({ behavior: 'smooth', block: 'start' });
   requestAnimationFrame(() => {

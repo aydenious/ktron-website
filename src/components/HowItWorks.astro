@@ -35,17 +35,36 @@ const { lang } = Astro.props;
     // the URL alone: a hash left in the address bar (back button, reload) names nothing the reader wants.
     const FRAGMENT_SCROLL_MS = 4000; // a page load's own scroll to its fragment is over by then
     const nav = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
+    const INPUTS = ['wheel', 'touchstart', 'keydown', 'pointerdown'];
     let touched = false; // the reader has scrolled, clicked or pressed a key since the load
+    let expired = false;
+    let consumed = false; // the IntersectionObserver has fired and its result is with setup
     let linkTarget: Element | null = null; // a header link was clicked and its scroll may still be running
-    const arriving = () => !touched && performance.now() < FRAGMENT_SCROLL_MS;
-    const touch = () => { touched = true; linkTarget = null; };
-    for (const type of ['wheel', 'touchstart', 'keydown', 'pointerdown']) addEventListener(type, touch, { passive: true });
-    addEventListener('hashchange', () => { touched = true; linkTarget = document.querySelector(':target'); });
+    const afterwards: (() => void)[] = [];
+    const arriving = () => !touched && !expired;
+    // The listeners are needed until the reader's first input or the time limit, and until setup has
+    // taken what they recorded; after both they go, with whatever setup attached for the same period.
+    const tidy = () => {
+      if (!consumed || arriving()) return;
+      for (const type of INPUTS) removeEventListener(type, touch);
+      removeEventListener('hashchange', hashed);
+    };
+    const over = () => {
+      for (const done of afterwards.splice(0)) done();
+      tidy();
+    };
+    function touch(): void { touched = true; linkTarget = null; over(); }
+    function hashed(): void { touched = true; linkTarget = document.querySelector(':target'); over(); }
+    for (const type of INPUTS) addEventListener(type, touch, { passive: true });
+    addEventListener('hashchange', hashed);
+    setTimeout(() => { expired = true; over(); }, Math.max(0, FRAGMENT_SCROLL_MS - performance.now()));
     const io = new IntersectionObserver((entries) => {
       if (!entries.some((e) => e.isIntersecting)) return;
       io.disconnect();
-      const deepLink = nav?.type === 'navigate' && arriving() ? document.querySelector(':target') : null;
-      import('./scene/animate').then(({ setup }) => setup(section, { deepLink, linkTarget, arriving }), keepStills);
+      const deepLink = nav?.type === 'navigate' ? document.querySelector(':target') : null;
+      const arrival = { deepLink, arriving, linkTarget: () => linkTarget, whenOver: (done: () => void) => { afterwards.push(done); } };
+      consumed = true;
+      import('./scene/animate').then(({ setup }) => { setup(section, arrival); tidy(); }, keepStills);
     }, { rootMargin: '200px 0px' });
     io.observe(section);
   }

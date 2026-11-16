@@ -82,17 +82,20 @@ test('a stale hash does not pull the reader back down when they scroll up to the
   });
   await expect.poll(() => page.evaluate(() => scrollY), { timeout: 5000 }).toBeGreaterThan(2000);
   await expect(page.locator('section#how[data-ready]')).toHaveCount(0);
-  await page.mouse.move(100, 300);
   // Contact only ever moves away as the reader scrolls up; a hijack would snap it back to the header.
   await page.evaluate(() => {
     const w = window as unknown as { tops: number[] };
     w.tops = [];
     addEventListener('scroll', () => w.tops.push(document.getElementById('contact')!.getBoundingClientRect().top));
   });
-  while (!(await how(page).evaluate((e) => e.getBoundingClientRect().top > -200))) {
-    await page.mouse.wheel(0, -700);
-    await page.waitForFunction(() => document.readyState === 'complete');
-  }
+  // The reader scrolls up with the keyboard (it works in every browser, mobile WebKit included, and the
+  // page counts a key press as the reader taking over). One page up per poll, until the scene is near:
+  // bounded by the poll's timeout, paced by the page.
+  await expect.poll(async () => {
+    const near = await how(page).evaluate((e) => e.getBoundingClientRect().top > -200);
+    if (!near) await page.keyboard.press('PageUp');
+    return near;
+  }, { timeout: 20000, intervals: [100] }).toBe(true);
   await expect(page.locator('section#how[data-ready]')).toHaveCount(1);
   // The reader is where they scrolled to: at the scene, not thrown down to Contact.
   await expect(how(page)).toBeInViewport();
@@ -102,8 +105,34 @@ test('a stale hash does not pull the reader back down when they scroll up to the
   tops.forEach((t, i) => { if (i > 0) expect(t, `scroll event ${i}`).toBeGreaterThanOrEqual(tops[i - 1] - 50); });
 });
 
-test('a header link clicked from the top lands on its target and is not treated as a deep link', async ({ page }) => {
+test('a reader who scrolls away while the animation script downloads is not thrown back to the deep link', async ({ page }) => {
+  let release!: () => void;
+  const gate = new Promise<void>((r) => { release = r; });
+  let held!: () => void;
+  const requested = new Promise<void>((r) => { held = r; });
+  await page.route(/\/animate\.[^/]*\.js$/, async (route) => {
+    held();
+    await gate;
+    await route.continue();
+  });
+  await page.goto('/#contact');
+  await requested; // the scene's script was asked for, and is held
+  await expect.poll(async () => (await offTarget(page, 'contact')) <= 4, { timeout: 8000 }).toBe(true);
+  // The reader takes over with the keyboard and moves away from Contact, one page up per poll.
+  await expect.poll(async () => {
+    await page.keyboard.press('PageUp');
+    return sectionTop(page, 'contact');
+  }, { intervals: [100] }).toBeGreaterThan(page.viewportSize()!.height);
+  release();
+  await expect(page.locator('section#how[data-ready]')).toHaveCount(1);
+  // The reader stays where they scrolled to; the script's late arrival must not pull them to Contact.
+  expect(await sectionTop(page, 'contact')).toBeGreaterThan(page.viewportSize()!.height);
+});
+
+// 'jump' stands in for browsers that reach the target without a smooth scroll (the scene is not met on the way).
+for (const mode of ['smooth', 'jump']) test(`a header link clicked from the top lands on its target and is not treated as a deep link (${mode})`, async ({ page }) => {
   await page.goto('/');
+  if (mode === 'jump') await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
   const nav = page.viewportSize()!.width >= 768 ? page.locator('nav.desk a[href="#contact"]') : null;
   if (nav) await nav.click();
   else {
@@ -111,9 +140,19 @@ test('a header link clicked from the top lands on its target and is not treated 
     await page.locator('details.menu a[href="#contact"]').click();
   }
   await expect.poll(async () => (await offTarget(page, 'contact')) <= 4, { timeout: 8000 }).toBe(true);
-  await expect(page.locator('section#how[data-ready]')).toHaveCount(1); // the scene was built on the way
-  await page.waitForTimeout(500);
+  await page.waitForTimeout(500); // a late correction would show up here
   expect(await offTarget(page, 'contact')).toBeLessThanOrEqual(4);
+  // Whether the scene was built on the way depends on how the browser scrolls (some jump straight
+  // there), so it is not asserted yet. Scrolling back up by key must build it and must not pull the
+  // reader down to Contact again.
+  await expect.poll(async () => {
+    const near = await how(page).evaluate((e) => e.getBoundingClientRect().top > -200);
+    if (!near) await page.keyboard.press('PageUp');
+    return near;
+  }, { timeout: 20000, intervals: [100] }).toBe(true);
+  await expect(page.locator('section#how[data-ready]')).toHaveCount(1);
+  await expect(how(page)).toBeInViewport();
+  expect(await sectionTop(page, 'contact')).toBeGreaterThan(page.viewportSize()!.height);
 });
 
 test('a malformed hash does not break the scene', async ({ page }) => {
