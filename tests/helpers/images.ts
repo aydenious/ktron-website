@@ -2,7 +2,7 @@ import { parse, type HTMLElement } from 'node-html-parser';
 
 const widths = (srcset: string | undefined) => (srcset ?? '').split(',').map((e) => Number(e.trim().match(/\s(\d+)w$/)?.[1])).filter(Boolean);
 
-export type Source = { file: string; text: string };
+type Source = { file: string; text: string };
 
 /**
  * Every `<Picture>` whose literal `widths={[...]}` asks for more pixels than its photo has.
