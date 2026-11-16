@@ -38,7 +38,7 @@ const links: [string, Key][] = [['services', 'nav.services'], ['how', 'nav.how']
   .site-header { position: sticky; top: 0; z-index: 40; background: var(--paper-glass);
     backdrop-filter: blur(8px); border-bottom: 1px solid var(--grey-1); }
   :global(main [id]) { scroll-margin-top: 72px; } /* anchor targets clear the 64 px sticky header */
-  .bar { display: flex; align-items: center; gap: 16px; min-height: 64px; }
+  .bar { display: flex; align-items: center; gap: 16px; min-height: var(--header-h); }
   .logo { display: inline-flex; align-items: center; min-block-size: 44px; } /* tap target of at least 44 px */
   .logo :global(svg) { width: 120px; }
   .desk { display: none; margin-left: auto; gap: 24px; }
@@ -51,7 +51,7 @@ const links: [string, Key][] = [['services', 'nav.services'], ['how', 'nav.how']
   /* A closed menu still lays its content out in Chrome (its last boxes can pass the viewport edge),
      so hide it outright; the tap target test also skips it this way. */
   .menu:not([open]) nav { display: none; }
-  .menu nav { position: absolute; left: 0; right: 0; top: 64px; display: grid; background: var(--paper);
+  .menu nav { position: absolute; left: 0; right: 0; top: var(--header-h); display: grid; background: var(--paper);
     border-bottom: 1px solid var(--grey-1); padding: 8px var(--gutter) 16px; }
   .menu nav a { padding: 12px 0; }
   @media (min-width: 768px) {

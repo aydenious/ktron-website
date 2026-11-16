@@ -14,6 +14,15 @@ describe('colour tokens (PRD §7)', () => {
     expect(token(name)?.toUpperCase()).toBe(value);
   });
 
+  it('the header height is one token, used by the header and the pinned stage', () => {
+    expect(token('header-h')).toBe('64px');
+    for (const f of ['src/components/Header.astro', 'src/components/HowItWorks.astro']) {
+      const text = readFileSync(f, 'utf8');
+      expect(text, f).toContain('var(--header-h)');
+      expect(text, `${f} repeats the header height as a literal`).not.toMatch(/(?:min-height|top|100svh -) *: *64px|100svh - 64px/);
+    }
+  });
+
   it('Chinese text uses the system Simplified Chinese fonts (Ruling 1)', () => {
     expect(token('font-zh')).toContain('"PingFang SC"');
     expect(token('font-zh')).toContain('"Microsoft YaHei"');
