@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  FACTORY_X, HOUSE_X, INSPECT_X, STEPS, STILLS, VIEW_W, WORLD_W, camera, stateAt, stepOf, view,
+  FACTORY_X, HOUSE_X, INSPECT_X, MAX_SPEED, STEPS, STILLS, VIEW_W, WORLD_W, camera, stateAt, stepOf, view,
 } from '../../src/components/scene/steps';
 
 const samples = Array.from({ length: 501 }, (_, i) => i / 100); // 0.00 … 5.00
@@ -43,9 +43,30 @@ describe('scene model (PRD §6)', () => {
   it('never loses or invents a crate', () => {
     for (const t of samples) expect(crates(t), `t=${t}`).toBe(4);
   });
-  it('the van never jumps', () => {
+  it('the van never jumps: no sample moves further than the fastest segment allows', () => {
+    const margin = 0.2; // vanX is rounded to 0.1 at both ends of a step
+    const limit = MAX_SPEED * 0.01 + margin;
     for (let i = 1; i < samples.length; i++) {
-      expect(Math.abs(stateAt(samples[i]).vanX - stateAt(samples[i - 1]).vanX), `t=${samples[i]}`).toBeLessThanOrEqual(20);
+      expect(Math.abs(stateAt(samples[i]).vanX - stateAt(samples[i - 1]).vanX), `t=${samples[i]}`).toBeLessThanOrEqual(limit);
+    }
+  });
+  it('the van faces the way it drives, and only turns round while standing', () => {
+    const x = samples.map((t) => stateAt(t).vanX);
+    const face = samples.map((t) => stateAt(t).facing);
+    const dir = x.map((v, i) => (i + 1 < x.length ? Math.sign(x[i + 1] - v) : 0));
+    for (let i = 0; i < x.length; i++) if (dir[i] !== 0) expect(face[i], `moving at t=${samples[i]}`).toBe(dir[i]);
+    for (let a = 0; a < x.length; ) {
+      if (dir[a] !== 0) { a++; continue; }
+      let b = a;
+      while (b + 1 < x.length && dir[b + 1] === 0) b++;
+      const before = a > 0 ? Math.sign(x[a] - x[a - 1]) || face[a - 1] : null;
+      const after = b + 1 < x.length ? dir[b + 1] : null;
+      const run = face.slice(a, b + 1);
+      for (const f of run) expect([before, after], `standing at t=${samples[a]}`).toContain(f);
+      // at most one turn, from the way it came to the way it goes
+      expect(new Set(run).size, `standing at t=${samples[a]}`).toBeLessThanOrEqual(2);
+      if (new Set(run).size === 2) expect([run[0], run[run.length - 1]], `turn at t=${samples[a]}`).toEqual([before, after]);
+      a = b + 1;
     }
   });
   it('the view keeps the van on screen', () => {

@@ -1,7 +1,7 @@
 ---
 import '@fontsource-variable/manrope';
 import '../../styles/global.css';
-import logo from '../../brand/logo-white.svg?raw';
+import Logo from '../../components/Logo.astro';
 import { LANGS, t, type Lang } from '../../i18n';
 export function getStaticPaths() {
   return [{ params: { lang: 'en' } }, { params: { lang: 'zh' } }];
@@ -16,7 +16,7 @@ const lang = Astro.params.lang as Lang;
   </head>
   <body>
     <div class="card">
-      <div class="logo" set:html={logo} />
+      <div class="logo"><Logo variant="white" /></div>
       <h1>{t(lang, 'hero.title')}</h1>
       <p>{t(lang, 'hero.sub')}</p>
       <span class="url">ktron.my</span>

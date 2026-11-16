@@ -42,6 +42,9 @@ const FRAMES: Frame[] = [
   F(5, FACTORY_X, -1, 0, 0, { done: 4 }),
 ];
 
+/** The fastest the van ever drives, in world units per step (the quickest hop between two frames). */
+export const MAX_SPEED = Math.max(...FRAMES.slice(1).map((b, i) => Math.abs(b.x - FRAMES[i].x) / (b.t - FRAMES[i].t)));
+
 const r = (n: number, d = 1) => Number(n.toFixed(d));
 const lerp = (a: number, b: number, k: number) => a + (b - a) * k;
 
