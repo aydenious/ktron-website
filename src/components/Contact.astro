@@ -1,0 +1,27 @@
+---
+import WhatsAppButton from './WhatsAppButton.astro';
+import { COMPANY, CONTACT } from '../site';
+import { t, type Lang } from '../i18n';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+---
+<section id="contact" class="contact">
+  <div class="wrap">
+    <h2>{t(lang, 'contact.title')}</h2>
+    <p>{t(lang, 'contact.lead')}</p>
+    <WhatsAppButton lang={lang} />
+    <dl>
+      <dt>{t(lang, 'contact.phone')}</dt><dd><a href={CONTACT.tel}>{CONTACT.phoneShown}</a></dd>
+      <dt>{t(lang, 'contact.email')}</dt><dd><a href={CONTACT.mailto}>{CONTACT.email}</a></dd>
+      <dt>{t(lang, 'contact.address')}</dt><dd>{CONTACT.address}</dd>
+    </dl>
+    <p class="reg">{COMPANY.line}</p>
+  </div>
+</section>
+<style>
+  .contact { padding: 64px 0; background: var(--gold-soft); }
+  dl { display: grid; grid-template-columns: max-content 1fr; gap: 8px 16px; margin: 24px 0; }
+  dt { font-weight: 700; color: var(--navy); }
+  dd { margin: 0; overflow-wrap: anywhere; }
+  .reg { font-size: 0.9rem; }
+</style>

@@ -1,0 +1,26 @@
+---
+import logoWhite from '../brand/logo-white.svg?raw';
+import { COMPANY } from '../site';
+import { LANGS, otherLang, t, type Lang } from '../i18n';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const other = otherLang(lang);
+---
+<footer class="site-footer">
+  <div class="wrap cols">
+    <div class="logo" set:html={logoWhite} />
+    <p>{COMPANY.line}</p>
+    <p>
+      <a href={LANGS[other].path} hreflang={LANGS[other].htmlLang} lang={LANGS[other].htmlLang}>{t(lang, 'lang.other')}</a>
+      · <a href="https://github.com/aydenious/ktron-website/blob/main/CREDITS.md">{t(lang, 'footer.credits')}</a>
+    </p>
+    <p>{t(lang, 'footer.rights')}</p>
+  </div>
+</footer>
+<style>
+  .site-footer { background: var(--navy); color: var(--paper); padding: 40px 0 96px; }
+  .cols { display: grid; gap: 8px; }
+  .logo :global(svg) { width: 120px; margin-bottom: 8px; }
+  a { color: var(--gold-soft); }
+  p { margin: 0; }
+</style>

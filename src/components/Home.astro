@@ -1,0 +1,18 @@
+---
+import Base from '../layouts/Base.astro';
+import Header from './Header.astro';
+import Footer from './Footer.astro';
+import Contact from './Contact.astro';
+import FloatingWhatsApp from './FloatingWhatsApp.astro';
+import { LANGS, t, type Lang } from '../i18n';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+---
+<Base lang={lang} title={t(lang, 'meta.title')} description={t(lang, 'meta.description')} path={LANGS[lang].path} localBusiness>
+  <Header lang={lang} />
+  <main id="main">
+    <Contact lang={lang} />
+  </main>
+  <Footer lang={lang} />
+  <FloatingWhatsApp lang={lang} />
+</Base>

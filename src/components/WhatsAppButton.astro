@@ -1,0 +1,18 @@
+---
+import { siWhatsapp } from 'simple-icons';
+import { CONTACT } from '../site';
+import { t, type Lang } from '../i18n';
+interface Props { lang: Lang; variant?: 'gold' | 'outline' }
+const { lang, variant = 'gold' } = Astro.props;
+---
+<a class:list={['btn', variant]} href={CONTACT.whatsapp} target="_blank" rel="noopener">
+  <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d={siWhatsapp.path} /></svg>
+  <span>{t(lang, 'cta.whatsapp')}</span>
+</a>
+<style>
+  .btn { display: inline-flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 22px;
+    border-radius: 999px; font-weight: 700; text-decoration: none; }
+  .gold { background: var(--gold); color: var(--navy); }
+  .gold:hover { filter: brightness(0.92); }
+  .outline { border: 2px solid currentColor; color: inherit; }
+</style>
