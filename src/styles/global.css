@@ -11,7 +11,8 @@ body {
   font-size: 1.0625rem;
   line-height: 1.6;
 }
-:lang(zh) { font-family: "Manrope Variable", var(--font-zh), sans-serif; line-height: 1.75; }
+/* Not a bare :lang(zh): that would also match every heading and override its line-height. */
+body:lang(zh), [lang^="zh"] { font-family: "Manrope Variable", var(--font-zh), sans-serif; line-height: 1.75; }
 h1, h2, h3 { color: var(--navy); line-height: 1.2; margin: 0 0 0.5em; text-wrap: balance; }
 img, svg { max-width: 100%; height: auto; display: block; }
 a { color: var(--navy-2); }

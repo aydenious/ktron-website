@@ -39,7 +39,10 @@ describe.each(PAGES)('$path search data', ({ path, lang, s, canonical }) => {
     expect(ld.telephone).toBe('+60105454173');
     expect(ld.address.postalCode).toBe('81300');
     expect(ld.areaServed).toHaveLength(8);
-    for (const key of ['openingHours', 'priceRange', 'aggregateRating', 'review']) expect(ld).not.toHaveProperty(key);
+    const keys = (v: unknown): string[] =>
+      Array.isArray(v) ? v.flatMap(keys) : v && typeof v === 'object' ? Object.entries(v).flatMap(([k, x]) => [k, ...keys(x)]) : [];
+    const FORBIDDEN_KEYS = ['openingHours', 'priceRange', 'aggregateRating', 'review', 'offers', 'makesOffer', 'hasOfferCatalog'];
+    expect(keys(ld).filter((k) => FORBIDDEN_KEYS.includes(k))).toEqual([]);
   });
   it('the JSON-LD address is the contact address', () => {
     const a = JSON.parse(doc.querySelector('script[type="application/ld+json"]')!.text).address;

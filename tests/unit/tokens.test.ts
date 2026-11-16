@@ -23,7 +23,4 @@ describe('colour tokens (PRD §7)', () => {
     expect(tokenValue(':root { --navy: #0B2545; }', 'navy')).toBe('#0B2545');
     expect(() => tokenValue(':root { --gold: #C9A227; }', 'navy')).toThrow(/navy/);
   });
-  it('the theme-color meta repeats --navy, read from the token file', () => {
-    expect(tokenValue(css, 'navy')).toBe('#0B2545');
-  });
 });

@@ -6,7 +6,9 @@ import { readFileSync } from 'node:fs';
 // slices cover 4-16 characters, so a shorter or longer form is only found as a whole token or join;
 // names of 4 or more parts, HTML entities, \u escapes and homoglyphs are not covered; each short
 // form needs its own hash. A false positive is fixed with a reviewed allow-list of exact
-// exceptions, never by weakening the detector.
+// exceptions, never by weakening the detector. Binary files (a NUL in the first 8 KB, which includes
+// image metadata) are checked by name only; the commit scan covers the history in the checkout (CI
+// fetches full depth).
 const FORBIDDEN: ReadonlySet<string> = new Set([
   '7ff26ca7636fecde95757c88c79117cd5733344dce935994ba0683bd8ae30471',
 ]);

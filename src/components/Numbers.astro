@@ -4,7 +4,7 @@ interface Props { lang: Lang }
 const { lang } = Astro.props;
 const items = ['since', 'workers', 'capacity', 'turnaround', 'area'] as const;
 ---
-<section id="numbers" class="numbers">
+<section id="numbers" class="numbers on-dark">
   <div class="wrap">
     <h2>{t(lang, 'numbers.title')}</h2>
     <ul>
