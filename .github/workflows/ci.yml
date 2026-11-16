@@ -10,6 +10,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # the forbidden-word test reads every commit message
       - uses: actions/setup-node@v5
         with:
           node-version-file: .nvmrc
