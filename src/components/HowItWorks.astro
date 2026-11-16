@@ -38,7 +38,7 @@ const { lang } = Astro.props;
     const INPUTS = ['wheel', 'touchstart', 'keydown', 'pointerdown'];
     let touched = false; // the reader has scrolled, clicked or pressed a key since the load
     let expired = false;
-    let consumed = false; // the IntersectionObserver has fired and its result is with setup
+    let consumed = false; // setup has run and has taken what the listeners recorded
     let linkTarget: Element | null = null; // a header link was clicked and its scroll may still be running
     const afterwards: (() => void)[] = [];
     const arriving = () => !touched && !expired;
@@ -63,8 +63,11 @@ const { lang } = Astro.props;
       io.disconnect();
       const deepLink = nav?.type === 'navigate' ? document.querySelector(':target') : null;
       const arrival = { deepLink, arriving, linkTarget: () => linkTarget, whenOver: (done: () => void) => { afterwards.push(done); } };
-      consumed = true;
-      import('./scene/animate').then(({ setup }) => { setup(section, arrival); tidy(); }, keepStills);
+      // Setup runs after the script has downloaded and reads what the listeners recorded; they stay until then.
+      import('./scene/animate').then(({ setup }) => { setup(section, arrival); }, keepStills).finally(() => {
+        consumed = true;
+        tidy();
+      });
     }, { rootMargin: '200px 0px' });
     io.observe(section);
   }

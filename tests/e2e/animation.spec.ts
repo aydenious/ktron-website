@@ -4,6 +4,30 @@ import { expect, test, type Page } from '@playwright/test';
 const how = (page: Page) => page.locator('section#how');
 const stage = (page: Page) => page.locator('[data-stage]');
 const still = (page: Page, n: number) => page.locator(`#how ol[data-stills] > li[data-step="${n}"]`);
+/** One page up by key, then wait until the keyboard's animated scroll has stopped (two equal reads, a frame apart). */
+async function pageUp(page: Page) {
+  await page.keyboard.press('PageUp');
+  await expect.poll(() => page.evaluate(() => new Promise<boolean>((done) => {
+    const y = scrollY;
+    requestAnimationFrame(() => requestAnimationFrame(() => done(scrollY === y)));
+  })), { timeout: 5000 }).toBe(true);
+}
+/**
+ * Holds the animation script's download until release() is called. isHeld() says whether it has been asked for:
+ * that happens when the scene comes near the viewport, which a deep link's scroll may or may not do (mobile
+ * WebKit jumps straight to the target), so a test must bring the scene near itself rather than wait for it.
+ */
+async function holdChunk(page: Page) {
+  let release!: () => void;
+  const gate = new Promise<void>((r) => { release = r; });
+  let held = false;
+  await page.route(/\/animate\.[^/]*\.js$/, async (route) => {
+    held = true;
+    await gate;
+    await route.continue();
+  });
+  return { release, isHeld: () => held };
+}
 const scrollTo = (page: Page, top: number) =>
   page.evaluate((y) => window.scrollTo({ top: y, behavior: 'instant' }), top);
 
@@ -93,9 +117,9 @@ test('a stale hash does not pull the reader back down when they scroll up to the
   // bounded by the poll's timeout, paced by the page.
   await expect.poll(async () => {
     const near = await how(page).evaluate((e) => e.getBoundingClientRect().top > -200);
-    if (!near) await page.keyboard.press('PageUp');
+    if (!near) await pageUp(page);
     return near;
-  }, { timeout: 20000, intervals: [100] }).toBe(true);
+  }, { timeout: 30000, intervals: [100] }).toBe(true);
   await expect(page.locator('section#how[data-ready]')).toHaveCount(1);
   // The reader is where they scrolled to: at the scene, not thrown down to Contact.
   await expect(how(page)).toBeInViewport();
@@ -105,28 +129,70 @@ test('a stale hash does not pull the reader back down when they scroll up to the
   tops.forEach((t, i) => { if (i > 0) expect(t, `scroll event ${i}`).toBeGreaterThanOrEqual(tops[i - 1] - 50); });
 });
 
-test('a reader who scrolls away while the animation script downloads is not thrown back to the deep link', async ({ page }) => {
-  let release!: () => void;
-  const gate = new Promise<void>((r) => { release = r; });
-  let held!: () => void;
-  const requested = new Promise<void>((r) => { held = r; });
-  await page.route(/\/animate\.[^/]*\.js$/, async (route) => {
-    held();
-    await gate;
-    await route.continue();
-  });
+// 'instant' stands in for mobile WebKit, whose fragment load jumps without passing the scene (so nothing is requested on the way).
+for (const mode of ['smooth', 'instant']) test(`a reader who scrolls away while the animation script downloads is not thrown back to the deep link (${mode})`, async ({ page }) => {
+  const { release, isHeld } = await holdChunk(page);
+  if (mode === 'instant') {
+    await page.addInitScript(() => {
+      document.addEventListener('DOMContentLoaded', () => {
+        const css = document.createElement('style');
+        css.textContent = 'html { scroll-behavior: auto !important; }';
+        document.head.append(css);
+      });
+    });
+  }
   await page.goto('/#contact');
-  await requested; // the scene's script was asked for, and is held
+  // (A key pressed during the fragment scroll would cancel it, so the reader waits to arrive first.)
   await expect.poll(async () => (await offTarget(page, 'contact')) <= 4, { timeout: 8000 }).toBe(true);
-  // The reader takes over with the keyboard and moves away from Contact, one page up per poll.
+  if (mode === 'instant') expect(isHeld(), 'the jump did not pass the scene, as in mobile WebKit').toBe(false);
+  // The reader takes over with the keyboard and scrolls up, one page per poll, until the scene is near
+  // and its script has been asked for (and is held); then scrolls on while it downloads.
   await expect.poll(async () => {
-    await page.keyboard.press('PageUp');
-    return sectionTop(page, 'contact');
-  }, { intervals: [100] }).toBeGreaterThan(page.viewportSize()!.height);
+    if (!isHeld()) await pageUp(page);
+    return isHeld();
+  }, { timeout: 30000, intervals: [100] }).toBe(true);
+  await pageUp(page);
+  const away = await sectionTop(page, 'contact'); // where the reader has scrolled to
+  expect(away, 'the reader is away from Contact').toBeGreaterThan(200);
   release();
   await expect(page.locator('section#how[data-ready]')).toHaveCount(1);
-  // The reader stays where they scrolled to; the script's late arrival must not pull them to Contact.
-  expect(await sectionTop(page, 'contact')).toBeGreaterThan(page.viewportSize()!.height);
+  // The reader stays where they scrolled to (the section only grows below them): the script's late
+  // arrival must not pull them back towards Contact.
+  expect(await sectionTop(page, 'contact')).toBeGreaterThanOrEqual(away - 4);
+});
+
+for (const type of ['wheel', 'touchstart', 'keydown', 'pointerdown']) {
+  test(`a ${type} while the script downloads counts as the reader taking over: no jump to the deep link`, async ({ page }) => {
+    const { release, isHeld } = await holdChunk(page);
+    await page.goto('/#contact');
+    await expect.poll(async () => (await offTarget(page, 'contact')) <= 4, { timeout: 8000 }).toBe(true);
+    // Bring the scene near without any input (a script's scroll), so the download starts and is held.
+    await how(page).evaluate((e) => e.scrollIntoView({ behavior: 'instant', block: 'start' }));
+    await expect.poll(isHeld).toBe(true);
+    // The event stands in for the reader's input in any browser.
+    await page.evaluate((t) => window.dispatchEvent(new Event(t)), type);
+    expect(await sectionTop(page, 'contact'), `${type}: the reader is at the scene`).toBeGreaterThan(page.viewportSize()!.height);
+    release();
+    await expect(page.locator('section#how[data-ready]')).toHaveCount(1);
+    expect(await sectionTop(page, 'contact'), `${type}: jumped back to Contact`).toBeGreaterThan(page.viewportSize()!.height);
+  });
+}
+
+test('a header link clicked while the script downloads still lands on its target', async ({ page }) => {
+  const { release, isHeld } = await holdChunk(page);
+  await page.goto('/');
+  await how(page).scrollIntoViewIfNeeded(); // the test brings the scene near itself: its script is asked for and held
+  await expect.poll(isHeld).toBe(true);
+  if (page.viewportSize()!.width >= 768) await page.locator('nav.desk a[href="#contact"]').click();
+  else {
+    await page.locator('details.menu summary').click();
+    await page.locator('details.menu a[href="#contact"]').click();
+  }
+  release();
+  await expect(page.locator('section#how[data-ready]')).toHaveCount(1);
+  await expect.poll(async () => (await offTarget(page, 'contact')) <= 4, { timeout: 8000 }).toBe(true);
+  await page.waitForTimeout(500); // a late correction would show up here
+  expect(await offTarget(page, 'contact')).toBeLessThanOrEqual(4);
 });
 
 // 'jump' stands in for browsers that reach the target without a smooth scroll (the scene is not met on the way).
@@ -147,9 +213,9 @@ for (const mode of ['smooth', 'jump']) test(`a header link clicked from the top 
   // reader down to Contact again.
   await expect.poll(async () => {
     const near = await how(page).evaluate((e) => e.getBoundingClientRect().top > -200);
-    if (!near) await page.keyboard.press('PageUp');
+    if (!near) await pageUp(page);
     return near;
-  }, { timeout: 20000, intervals: [100] }).toBe(true);
+  }, { timeout: 30000, intervals: [100] }).toBe(true);
   await expect(page.locator('section#how[data-ready]')).toHaveCount(1);
   await expect(how(page)).toBeInViewport();
   expect(await sectionTop(page, 'contact')).toBeGreaterThan(page.viewportSize()!.height);
