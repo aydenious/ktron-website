@@ -1,6 +1,10 @@
 ---
 import '@fontsource-variable/manrope';
 import '../styles/global.css';
+import logo from '../brand/logo.svg?raw';
+import logoNavy from '../brand/logo-navy.svg?raw';
+import logoWhite from '../brand/logo-white.svg?raw';
+import icon from '../brand/icon.svg?raw';
 import logoA from '../brand/concepts/logo-a.svg?raw';
 import logoB from '../brand/concepts/logo-b.svg?raw';
 import logoC from '../brand/concepts/logo-c.svg?raw';
@@ -8,10 +12,27 @@ import iconA from '../brand/concepts/icon-a.svg?raw';
 import iconB from '../brand/concepts/icon-b.svg?raw';
 import iconC from '../brand/concepts/icon-c.svg?raw';
 
+// Every pair is shown large, small, on gold-soft, and as a square icon at 64, 32 and 16 px.
+const pair = (art: string, mark: string) => [
+  { tile: 'w320', art },
+  { tile: 'w160', art },
+  { tile: 'soft w80', art },
+  { tile: 'i64', art: mark },
+  { tile: 'i32', art: mark },
+  { tile: 'i16', art: mark },
+];
+const chosen = [
+  { tile: 'w320', art: logo },
+  { tile: 'w320', art: logoNavy },
+  { tile: 'w320 navy', art: logoWhite },
+  { tile: 'i64', art: icon },
+  { tile: 'i32', art: icon },
+  { tile: 'i16', art: icon },
+];
 const concepts = [
-  { id: 'A', name: 'The lens', note: 'Gold magnifier ring with a crosshair: 10x/30x inspection.', logo: logoA, icon: iconA },
-  { id: 'B', name: 'The clean edge', note: 'A gold sliver trimmed off the K: precise handwork.', logo: logoB, icon: iconB },
-  { id: 'C', name: 'The route', note: 'Factory → homes → inspection → back: the daily loop.', logo: logoC, icon: iconC },
+  { id: 'A', name: 'The lens', note: 'Gold magnifier ring with a crosshair: 10x/30x inspection.', tiles: pair(logoA, iconA) },
+  { id: 'B', name: 'The clean edge', note: 'A gold sliver trimmed off the K: precise handwork.', tiles: pair(logoB, iconB) },
+  { id: 'C', name: 'The route', note: 'Factory → homes → inspection → back: the daily loop.', tiles: pair(logoC, iconC) },
 ];
 ---
 <html lang="en">
@@ -19,32 +40,35 @@ const concepts = [
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex, nofollow" />
-    <title>KTRON logo concepts</title>
+    <title>KTRON brand</title>
     <style>
       .concept { padding: 32px 0; border-bottom: 1px solid var(--grey-1); }
       .row { display: flex; flex-wrap: wrap; gap: 24px; align-items: center; }
       .tile { padding: 24px; border-radius: var(--radius); background: #fff; }
       .tile.soft { background: var(--gold-soft); }
+      .tile.navy { background: var(--navy); }
       .w320 :global(svg) { width: 320px; } .w160 :global(svg) { width: 160px; } .w80 :global(svg) { width: 80px; }
       .i64 :global(svg) { width: 64px; } .i32 :global(svg) { width: 32px; } .i16 :global(svg) { width: 16px; }
     </style>
   </head>
   <body>
     <main class="wrap">
-      <h1>KTRON logo concepts</h1>
-      <p>Pick one: A, B or C. Each is shown large, small, on gold-soft, and as a square icon at 64, 32 and 16 px.</p>
+      <h1>KTRON brand</h1>
+      <p>Final set: full colour, one-colour navy, one-colour white on navy, and the square icon at 64, 32 and 16 px.</p>
+      <section class="concept">
+        <h2>Final set (A, the lens)</h2>
+        <div class="row">{chosen.map((t) => <div class={`tile ${t.tile}`} set:html={t.art} />)}</div>
+      </section>
+      <h2>Concepts</h2>
+      <p>
+        All three stay here so you can still choose. <code>npm run brand:pick a|b|c</code> rebuilds the final set from
+        one of them, then regenerates the favicon set from its icon.
+      </p>
       {concepts.map((c) => (
         <section class="concept">
           <h2>{c.id}. {c.name}</h2>
           <p>{c.note}</p>
-          <div class="row">
-            <div class="tile w320" set:html={c.logo} />
-            <div class="tile w160" set:html={c.logo} />
-            <div class="tile soft w80" set:html={c.logo} />
-            <div class="tile i64" set:html={c.icon} />
-            <div class="tile i32" set:html={c.icon} />
-            <div class="tile i16" set:html={c.icon} />
-          </div>
+          <div class="row">{c.tiles.map((t) => <div class={`tile ${t.tile}`} set:html={t.art} />)}</div>
         </section>
       ))}
     </main>

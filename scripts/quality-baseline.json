@@ -2,7 +2,7 @@
   "metrics": {
     "pattern.hex_colour_outside_tokens": 1,
     "pattern.colour_function_outside_tokens": 0,
-    "pattern.set_html": 6,
+    "pattern.set_html": 2,
     "pattern.console_in_src": 0,
     "pattern.swallowed_error": 0,
     "pattern.risky_dom": 0,
