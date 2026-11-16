@@ -85,6 +85,22 @@ describe('quality CLI', () => {
     expect(r.status).toBe(1);
     expect(r.stderr).toContain('rose: pattern.test_skip');
   });
+  it('keeps the saved tool counts while QUALITY_SKIP_TOOLS is set, so --update cannot lock in a false fall', () => {
+    const metrics = { ...zeroBaseline().metrics, 'tools.jscpd_clones': 3, 'tools.knip_findings': 2 };
+    const fixture = repo({ baseline: { metrics, history: [] } });
+    const r = run(fixture.dir, ['--update']);
+    expect(r.status, r.stderr).toBe(0);
+    const saved = JSON.parse(readFileSync(join(fixture.dir, 'scripts/quality-baseline.json'), 'utf8'));
+    expect(saved.metrics['tools.jscpd_clones']).toBe(3);
+    expect(saved.metrics['tools.knip_findings']).toBe(2);
+  });
+  it('counts a clone between two .js files with the real jscpd', () => {
+    const fixture = repo({ files: { 'src/a.js': `${CLONE}\n`, 'scripts/b.js': `${CLONE}\n` } });
+    symlinkSync(join(REPO, 'node_modules'), join(fixture.dir, 'node_modules'), 'dir');
+    const printed = run(fixture.dir, ['--print'], process.env);
+    expect(printed.status, printed.stderr).toBe(0);
+    expect(JSON.parse(printed.stdout)['tools.jscpd_clones']).toBe(1);
+  });
   it('still runs the gate when invoked through a symlink', () => {
     const fixture = repo({ files: { 'src/a.astro': '<p style="color: #fff">x</p>\n' } });
     const link = join(fixture.dir, 'quality-link.mjs');

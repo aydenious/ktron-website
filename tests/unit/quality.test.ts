@@ -12,6 +12,10 @@ describe('quality gate', () => {
   it('does not take an anchor for a colour', () => {
     expect(countPatterns([file('src/a.astro', '<a href="#deflashing">#faq')])['pattern.hex_colour_outside_tokens']).toBe(0);
   });
+  it('skips id="#fee" but not a colour in an attribute that merely ends in id', () => {
+    const c = countPatterns([file('src/a.astro', '<p id="#fee" data-id="#fff" grid="#0B2545">x</p>')]);
+    expect(c['pattern.hex_colour_outside_tokens']).toBe(2);
+  });
   it('counts swallowed errors', () => {
     const c = countPatterns([file('src/a.ts', "p.catch(() => {}); try { f() } catch {} try { g() } catch (e) { }")]);
     expect(c['pattern.swallowed_error']).toBe(3);

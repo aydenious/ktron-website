@@ -29,7 +29,7 @@ export const PATTERNS = {
     re: /(?<![&\w])#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})(?![\w-])/g,
     skip: artworkOrTokens,
     // `#add`, `#bad` and `#fee` are valid hex words too: the fragment and selector uses are skipped.
-    skipMatch: (text, i) => /(?:href="|url\(|id=")$/.test(text.slice(Math.max(0, i - 6), i)),
+    skipMatch: (text, i) => /(?:href="|url\(|(?:^|[^\w-])id=")$/.test(text.slice(Math.max(0, i - 7), i)),
   },
   'pattern.colour_function_outside_tokens': {
     dirs: ['src'],
@@ -130,7 +130,7 @@ function jscpdClones() {
     // directory holds the built-site tests. node_modules stays ignored explicitly.
     execFileSync('npx', ['--no-install', 'jscpd', '--silent', '--no-gitignore', '--ignore', '**/node_modules/**',
       '--min-lines', '10', '--min-tokens', '70',
-      '--formats-exts', 'typescript:ts;javascript:mjs;css:css;markup:astro', '--reporters', 'json',
+      '--formats-exts', 'typescript:ts;javascript:mjs,js;css:css;markup:astro', '--reporters', 'json',
       '--output', out, ...CODE_DIRS.filter((d) => existsSync(d))], { stdio: 'ignore' });
     return JSON.parse(readFileSync(join(out, 'jscpd-report.json'), 'utf8')).statistics.total.clones;
   } finally {
@@ -175,11 +175,12 @@ function main(argv) {
       if (baseErrors.length) fail(baseErrors);
     }
   }
+  // Skipped tools keep their saved counts, so --update in a shell that set the variable cannot lock in a false fall.
   const skipTools = process.env.QUALITY_SKIP_TOOLS === '1';
   const current = {
     ...countPatterns(code),
-    'tools.jscpd_clones': skipTools ? 0 : jscpdClones(),
-    'tools.knip_findings': skipTools ? 0 : knipFindings(),
+    'tools.jscpd_clones': skipTools ? (saved.metrics['tools.jscpd_clones'] ?? 0) : jscpdClones(),
+    'tools.knip_findings': skipTools ? (saved.metrics['tools.knip_findings'] ?? 0) : knipFindings(),
   };
   if (argv.includes('--print')) return console.log(JSON.stringify(current, null, 2));
   if (errors.length) fail(errors);
