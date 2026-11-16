@@ -10,7 +10,7 @@
     "pattern.test_skip": 0,
     "size.files_over_400_lines": 0,
     "tools.jscpd_clones": 0,
-    "tools.knip_findings": 0
+    "tools.knip_findings": 4
   },
   "history": [
     {
@@ -77,6 +77,11 @@
       "date": "2026-11-16",
       "change": "pattern.set_html: 0 → 6",
       "reason": "brand preview page (plan Task 2): inline concept SVGs use set:html and the tile background uses #fff; the page and its raw colour are removed at launch (plan ruling 10)"
+    },
+    {
+      "date": "2026-11-16",
+      "change": "tools.knip_findings: 0 → 4",
+      "reason": "plan Task 4 adds src/i18n/index.ts and the site.ts constants before their consumers: plan Tasks 5 and 7 import t, LANGS, otherLang, SITE_URL, AREA_KEYS and AREA_NAMES_EN, so knip reports them unused until then and the count falls when those tasks land"
     }
   ]
 }
