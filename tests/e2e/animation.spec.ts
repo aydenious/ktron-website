@@ -65,16 +65,6 @@ test('scrolling back returns to step 1', async ({ page }) => {
   await expect(stage(page).locator('[data-night]')).toHaveAttribute('opacity', '0');
 });
 
-test('deep link below the animation does not jump', async ({ page }) => {
-  await page.goto('/#traceability');
-  await expect(page.locator('section#how[data-ready]')).toHaveCount(1); // the script did load above the reader
-  const top = () => page.locator('#traceability').evaluate((e) => e.getBoundingClientRect().top);
-  // 72 = scroll-margin-top under the sticky header (Task 5)
-  await expect.poll(async () => Math.abs((await top()) - 72) <= 4, { timeout: 3000 }).toBe(true);
-  await page.waitForTimeout(500); // a late correction would show up here
-  expect(Math.abs((await top()) - 72)).toBeLessThanOrEqual(4);
-});
-
 const sectionTop = (page: Page, id: string) => page.locator(`#${id}`).evaluate((e) => e.getBoundingClientRect().top);
 /** Pixels between a section and the place a link to it should leave it: under the sticky header
  *  (72 = scroll-margin-top, Task 5), or as high as the end of the page lets it go (Contact is last). */
@@ -85,17 +75,70 @@ const offTarget = (page: Page, id: string) =>
     return Math.abs(top - Math.max(72, reachable));
   });
 
-test('deep link stays put on a slow CPU (4x throttle on Chromium)', async ({ page, browserName }) => {
-  if (browserName === 'chromium') {
-    const client = await page.context().newCDPSession(page);
-    await client.send('Emulation.setCPUThrottlingRate', { rate: 4 });
+/**
+ * Opens a deep link and checks what holds in every browser. Whether the fragment load passes the scene
+ * (so that it is built on the way) depends on the browser and on timing: mobile WebKit jumps straight
+ * there, and its observer sometimes fires at load. So the page's own observer, with the loader's options,
+ * says whether the scene was brought near; the scene must be built exactly then.
+ */
+async function followDeepLink(page: Page, hash: string, id: string, mode: 'smooth' | 'instant', slow = false) {
+  if (slow) {
+    try {
+      const client = await page.context().newCDPSession(page);
+      await client.send('Emulation.setCPUThrottlingRate', { rate: 4 });
+    } catch (error) {
+      // CPU throttling is a Chromium feature: elsewhere there is no CDP session, the run is unthrottled
+      // and says so in its report. Every expectation is the same either way.
+      test.info().annotations.push({ type: 'cpu', description: `unthrottled: ${String(error)}` });
+    }
   }
-  await page.goto('/#contact');
-  await expect(page.locator('section#how[data-ready]')).toHaveCount(1);
-  await expect.poll(async () => (await offTarget(page, 'contact')) <= 4, { timeout: 8000 }).toBe(true);
+  await page.addInitScript((instant) => {
+    document.addEventListener('DOMContentLoaded', () => {
+      const section = document.querySelector('section#how')!;
+      new IntersectionObserver((entries) => {
+        if (entries.some((e) => e.isIntersecting)) (window as unknown as { crossed: boolean }).crossed = true;
+      }, { rootMargin: '200px 0px' }).observe(section);
+      if (instant) {
+        const css = document.createElement('style');
+        css.textContent = 'html { scroll-behavior: auto !important; }';
+        document.head.append(css);
+      }
+    });
+  }, mode === 'instant');
+  await page.goto(hash);
+  // The target lands under the sticky header (or as high as the page end allows) and stays there.
+  await expect.poll(async () => (await offTarget(page, id)) <= 4, { timeout: 8000 }).toBe(true);
   await page.waitForTimeout(500); // a late correction would show up here
-  expect(await offTarget(page, 'contact')).toBeLessThanOrEqual(4);
-});
+  expect(await offTarget(page, id)).toBeLessThanOrEqual(4);
+  // The scene is built exactly when the browser brought it near, and what was built is complete.
+  const crossed = await page.evaluate(() => !!(window as unknown as { crossed?: boolean }).crossed);
+  await expect(page.locator('section#how[data-ready]'), crossed ? 'the browser passed the scene' : 'the browser did not pass the scene')
+    .toHaveCount(crossed ? 1 : 0);
+  if (crossed) {
+    await expect(stage(page)).toHaveCount(1);
+    await expect(page.locator('.pin-spacer')).toHaveCount(1);
+    await expect(how(page)).toHaveAttribute('data-end', /^\d+$/);
+    expect(await offTarget(page, id)).toBeLessThanOrEqual(4); // still there once it is built
+  }
+  // The reader scrolls back up to the scene: it is built, and the target is not pulled again.
+  await expect.poll(async () => {
+    const near = await how(page).evaluate((e) => e.getBoundingClientRect().top > -200);
+    if (!near) await pageUp(page);
+    return near;
+  }, { timeout: 30000, intervals: [100] }).toBe(true);
+  await expect(page.locator('section#how[data-ready]')).toHaveCount(1);
+  await expect(how(page)).toBeInViewport();
+  expect(await sectionTop(page, id)).toBeGreaterThan(page.viewportSize()!.height);
+}
+
+for (const mode of ['smooth', 'instant'] as const) {
+  test(`deep link below the animation does not jump (${mode})`, async ({ page }) => {
+    await followDeepLink(page, '/#traceability', 'traceability', mode);
+  });
+  test(`deep link to the last section stays put on a slow CPU (${mode}; 4x throttle on Chromium)`, async ({ page }) => {
+    await followDeepLink(page, '/#contact', 'contact', mode, true);
+  });
+}
 
 test('a stale hash does not pull the reader back down when they scroll up to the scene', async ({ page }) => {
   await page.goto('/');
