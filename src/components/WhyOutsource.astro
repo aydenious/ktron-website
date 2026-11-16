@@ -1,0 +1,31 @@
+---
+import { t, type Key, type Lang } from '../i18n';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const points: Key[] = ['why.1', 'why.2', 'why.3', 'why.4'];
+---
+<section id="why" class="why" aria-labelledby="why-title">
+  <div class="wrap">
+    <h2 id="why-title">{t(lang, 'why.title')}</h2>
+    <ul role="list">
+      {points.map((k) => (
+        <li>
+          <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><circle class="disc" cx="12" cy="12" r="12" /><path class="tick" d="M7 12.5l3.2 3.2L17 9" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          <span>{t(lang, k)}</span>
+        </li>
+      ))}
+    </ul>
+    <p class="close">{t(lang, 'why.close')}</p>
+  </div>
+</section>
+<style>
+  .why { padding: 64px 0; }
+  ul { list-style: none; padding: 0; margin: 24px 0; display: grid; gap: 16px; }
+  li { display: grid; grid-template-columns: 24px 1fr; gap: 14px; align-items: start; font-size: 1.1rem; }
+  li svg { margin-top: 3px; }
+  /* The tick is decorative (aria-hidden): a gold disc with a navy check, as in the brand. */
+  li :global(.disc) { fill: var(--gold); }
+  li :global(.tick) { stroke: var(--navy); }
+  .close { font-weight: 800; color: var(--navy); font-size: 1.3rem; border-left: 4px solid var(--gold); padding-left: 14px; }
+  @media (min-width: 768px) { ul { grid-template-columns: 1fr 1fr; gap: 20px 40px; } }
+</style>

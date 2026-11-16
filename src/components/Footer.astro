@@ -1,0 +1,30 @@
+---
+import Logo from './Logo.astro';
+import { COMPANY } from '../site';
+import { LANGS, otherLang, t, type Lang } from '../i18n';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const other = otherLang(lang);
+---
+<footer class="site-footer on-dark">
+  <div class="wrap cols">
+    <div class="logo"><Logo variant="white" /></div>
+    <p>{COMPANY.line}</p>
+    <p class="links">
+      <a href={LANGS[other].path} hreflang={LANGS[other].htmlLang} lang={LANGS[other].htmlLang} data-keep-hash>{t(lang, 'lang.other')}</a>
+      <span aria-hidden="true">·</span>
+      <a href="https://github.com/aydenious/ktron-website/blob/main/CREDITS.md">{t(lang, 'footer.credits')}</a>
+    </p>
+    <p>{t(lang, 'footer.rights')}</p>
+  </div>
+</footer>
+<style>
+  .site-footer { background: var(--navy); color: var(--paper); padding: 40px 0 96px; }
+  .cols { display: grid; gap: 8px; }
+  .logo :global(svg) { width: 120px; margin-bottom: 8px; }
+  a { color: var(--gold-soft); }
+  p { margin: 0; }
+  /* Tap targets are at least 44 px tall (WCAG 2.5.8). */
+  .links { display: flex; flex-wrap: wrap; align-items: center; gap: 0 12px; }
+  .links a { display: inline-flex; align-items: center; min-block-size: 44px; }
+</style>

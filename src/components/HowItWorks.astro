@@ -1,0 +1,35 @@
+---
+import Scene from './scene/Scene.astro';
+import { STILLS } from './scene/steps';
+import { t, type Key, type Lang } from '../i18n';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+---
+<section id="how" class="how" data-how aria-labelledby="how-title">
+  <div class="wrap">
+    <h2 id="how-title">{t(lang, 'how.title')}</h2>
+    <ol class="stills" data-stills role="list">
+      {STILLS.map((state, i) => (
+        <li data-step={i + 1}>
+          <figure>
+            <Scene state={state} lang={lang} />
+            <figcaption>
+              <span class="counter" data-counter>{t(lang, 'how.counter', { n: i + 1 })}</span>
+              <span class="caption" data-caption>{t(lang, `how.${i + 1}` as Key)}</span>
+            </figcaption>
+          </figure>
+        </li>
+      ))}
+    </ol>
+  </div>
+</section>
+<style>
+  .how { padding: 64px 0; }
+  .stills { list-style: none; padding: 0; margin: 24px 0 0; display: grid; gap: 40px; }
+  figure { margin: 0; display: grid; gap: 14px; }
+  figure :global(svg.scene) { width: 100%; height: auto; border-radius: var(--radius); }
+  figcaption { display: grid; gap: 4px; }
+  .counter { font-weight: 800; color: var(--navy-2); font-size: 0.95rem; }
+  .caption { font-size: 1.15rem; }
+  @media (min-width: 960px) { figure { grid-template-columns: 2fr 1fr; align-items: center; gap: 36px; } }
+</style>

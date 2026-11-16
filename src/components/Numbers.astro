@@ -1,0 +1,27 @@
+---
+import { t, type Key, type Lang } from '../i18n';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const items = ['since', 'workers', 'capacity', 'turnaround', 'area'] as const;
+---
+<section id="numbers" class="numbers on-dark" aria-labelledby="numbers-title">
+  <div class="wrap">
+    <h2 id="numbers-title">{t(lang, 'numbers.title')}</h2>
+    <ul role="list">
+      {items.map((k) => (
+        <li>
+          <strong>{t(lang, `numbers.${k}.value` as Key)}</strong>
+          <span>{t(lang, `numbers.${k}.label` as Key)}</span>
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>
+<style>
+  .numbers { background: var(--navy); color: var(--white); padding: 56px 0; }
+  h2 { color: var(--white); }
+  ul { list-style: none; padding: 0; margin: 24px 0 0; display: grid; gap: 24px; grid-template-columns: 1fr 1fr; }
+  strong { display: block; color: var(--gold); font-size: clamp(1.8rem, 6vw, 2.6rem); font-weight: 800; line-height: 1.1; }
+  span { color: var(--grey-1); }
+  @media (min-width: 960px) { ul { grid-template-columns: repeat(5, 1fr); } }
+</style>

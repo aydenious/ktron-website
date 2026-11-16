@@ -2,7 +2,7 @@
   "metrics": {
     "pattern.hex_colour_outside_tokens": 1,
     "pattern.colour_function_outside_tokens": 0,
-    "pattern.set_html": 2,
+    "pattern.set_html": 3,
     "pattern.console_in_src": 0,
     "pattern.swallowed_error": 0,
     "pattern.risky_dom": 0,
@@ -77,6 +77,31 @@
       "date": "2026-11-16",
       "change": "pattern.set_html: 0 → 6",
       "reason": "brand preview page (plan Task 2): inline concept SVGs use set:html and the tile background uses #fff; the page and its raw colour are removed at launch (plan ruling 10)"
+    },
+    {
+      "date": "2026-11-16",
+      "change": "tools.knip_findings: 0 → 4",
+      "reason": "plan Task 4 adds src/i18n/index.ts and the site.ts constants before their consumers: plan Tasks 5 and 7 import t, LANGS, otherLang, SITE_URL, AREA_KEYS and AREA_NAMES_EN, so knip reports them unused until then and the count falls when those tasks land"
+    },
+    {
+      "date": "2026-11-16",
+      "change": "pattern.hex_colour_outside_tokens: 1 → 2",
+      "reason": "plan Task 5, ruling 10: set:html inlines the logo in Header, Footer and the 404 and renders the LocalBusiness JSON-LD (2 -> 6), and the theme-color meta repeats the navy token #0B2545 because a meta content cannot hold a CSS variable (1 -> 2); every other raw colour and colour function in the task moved to tokens.css"
+    },
+    {
+      "date": "2026-11-16",
+      "change": "pattern.set_html: 2 → 6",
+      "reason": "plan Task 5, ruling 10: set:html inlines the logo in Header, Footer and the 404 and renders the LocalBusiness JSON-LD (2 -> 6), and the theme-color meta repeats the navy token #0B2545 because a meta content cannot hold a CSS variable (1 -> 2); every other raw colour and colour function in the task moved to tokens.css"
+    },
+    {
+      "date": "2026-11-16",
+      "change": "tools.knip_findings: 3 → 5",
+      "reason": "plan Task 6 produces src/assets/photos/index.ts with photos: Record<PhotoId, ImageMetadata> and the PhotoId type (the task's Interfaces section) for plan Task 7's <Picture> rendering, so knip reports those two exports unused until Task 7 lands, as it did for the Task 4 i18n and site constants; the count falls when Task 7 consumes them"
+    },
+    {
+      "date": "2026-11-16",
+      "change": "pattern.set_html: 3 → 4",
+      "reason": "plan Task 9 step 8: the share-image page inlines logo-white.svg with set:html so /og/en/ and /og/zh/ can be screenshotted into public/og/*.png"
     }
   ]
 }

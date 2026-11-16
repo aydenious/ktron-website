@@ -1,0 +1,24 @@
+---
+import { AREA_KEYS, CONTACT } from '../site';
+import { t, type Lang } from '../i18n';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+---
+<section id="area" class="area" aria-labelledby="area-title">
+  <div class="wrap">
+    <h2 id="area-title">{t(lang, 'area.title')}</h2>
+    <p>{t(lang, 'area.lead')}</p>
+    <ul role="list">{AREA_KEYS.map((k) => <li>{t(lang, k)}</li>)}</ul>
+    <p class="links">
+      <a href={CONTACT.directions} target="_blank" rel="noopener">{t(lang, 'area.directions')}</a>
+      <a href={CONTACT.whatsapp} target="_blank" rel="noopener">{t(lang, 'area.more')}</a>
+    </p>
+  </div>
+</section>
+<style>
+  .area { padding: 64px 0; }
+  ul { list-style: none; padding: 0; margin: 20px 0; display: flex; flex-wrap: wrap; gap: 10px; }
+  li { background: var(--white); border: 1px solid var(--grey-2); border-radius: 999px; padding: 6px 14px; color: var(--navy); font-weight: 600; }
+  .links { display: flex; flex-wrap: wrap; gap: 8px 24px; }
+  .links a { font-weight: 700; min-height: 48px; display: inline-flex; align-items: center; }
+</style>

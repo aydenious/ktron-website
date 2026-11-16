@@ -1,0 +1,18 @@
+---
+import WhatsAppIcon from './WhatsAppIcon.astro';
+import { CONTACT } from '../site';
+import { t, type Lang } from '../i18n';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+---
+<a class="float-wa" href={CONTACT.whatsapp} target="_blank" rel="noopener" aria-label={t(lang, 'float.whatsapp')}>
+  <WhatsAppIcon size={30} />
+</a>
+<style>
+  .float-wa { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 50;
+    display: grid; place-items: center; width: 60px; height: 60px; border-radius: 50%; color: var(--navy);
+    background: var(--whatsapp); box-shadow: var(--shadow-float); }
+  /* Ring for light sections, halo for dark ones: pairs in tests/unit/contrast.test.ts. */
+  .float-wa:focus-visible { outline: 3px solid var(--navy); outline-offset: 2px; box-shadow: 0 0 0 2px var(--paper), var(--shadow-float); }
+  @media (min-width: 768px) { .float-wa { display: none; } }
+</style>

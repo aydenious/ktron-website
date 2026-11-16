@@ -1,0 +1,37 @@
+{
+  "hero": {
+    "source": "https://pixabay.com/photos/miniature-modelling-hobby-handcraft-6895032/",
+    "author": "Matias_Luge",
+    "licence": "Pixabay Content License"
+  },
+  "trimming": {
+    "source": "https://pixabay.com/photos/propeller-handcraft-modelling-7135238/",
+    "author": "Matias_Luge",
+    "licence": "Pixabay Content License"
+  },
+  "deflashing": {
+    "source": "https://unsplash.com/photos/black-and-white-plastic-frame--RsSZVGdIj0",
+    "author": "Mastars",
+    "licence": "Unsplash License"
+  },
+  "inspection": {
+    "source": "https://unsplash.com/photos/white-and-black-microscope-on-white-surface-JdtUKqGdqw8",
+    "author": "Pawel Czerwinski",
+    "licence": "Unsplash License"
+  },
+  "sorting": {
+    "source": "https://unsplash.com/photos/yellow-plastic-components-with-red-gems-gZQOtJrks9s",
+    "author": "iridial",
+    "licence": "Unsplash License"
+  },
+  "rework": {
+    "source": "https://unsplash.com/photos/CKTNzdyaIkU",
+    "author": "Matias Luge",
+    "licence": "Unsplash License"
+  },
+  "quality": {
+    "source": "https://unsplash.com/photos/JlVqUaGW2A0",
+    "author": "Bermix Studio",
+    "licence": "Unsplash License"
+  }
+}

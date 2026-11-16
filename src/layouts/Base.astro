@@ -1,0 +1,72 @@
+---
+import '@fontsource-variable/manrope';
+import '../styles/global.css';
+import tokensCss from '../styles/tokens.css?raw';
+import { tokenValue } from '../styles/token';
+import { ADDRESS, AREA_NAMES_EN, COMPANY, CONTACT, SITE_URL } from '../site';
+import { LANGS, type Lang } from '../i18n';
+
+interface Props {
+  lang: Lang;
+  title: string;
+  description: string;
+  path: string;
+  noindex?: boolean;
+  localBusiness?: boolean;
+}
+const { lang, title, description, path, noindex = false, localBusiness = false } = Astro.props;
+const canonical = new URL(path, SITE_URL).href;
+const ogImage = new URL(`/og/${lang}.png`, SITE_URL).href;
+const ld = {
+  '@context': 'https://schema.org',
+  '@type': 'LocalBusiness',
+  name: 'KTRON',
+  legalName: COMPANY.name,
+  identifier: COMPANY.reg,
+  foundingDate: COMPANY.founded,
+  url: canonical,
+  image: new URL('/icon-512.png', SITE_URL).href,
+  telephone: CONTACT.phoneE164,
+  email: CONTACT.email,
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: ADDRESS.street,
+    postalCode: ADDRESS.postalCode,
+    addressLocality: ADDRESS.locality,
+    addressRegion: ADDRESS.region,
+    addressCountry: 'MY',
+  },
+  areaServed: AREA_NAMES_EN.map((name) => ({ '@type': 'Place', name })),
+};
+---
+<!doctype html>
+<html lang={LANGS[lang].htmlLang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    {noindex && <meta name="robots" content="noindex" />}
+    {!noindex && <link rel="canonical" href={canonical} />}
+    {!noindex && <link rel="alternate" hreflang="en" href={new URL('/', SITE_URL).href} />}
+    {!noindex && <link rel="alternate" hreflang="zh-Hans" href={new URL('/zh/', SITE_URL).href} />}
+    {!noindex && <link rel="alternate" hreflang="x-default" href={new URL('/', SITE_URL).href} />}
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content={lang === 'en' ? 'en_MY' : 'zh_CN'} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content={tokenValue(tokensCss, 'navy')} />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    {localBusiness && <script is:inline type="application/ld+json" set:html={JSON.stringify(ld)} />}
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

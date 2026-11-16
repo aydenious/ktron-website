@@ -1,0 +1,24 @@
+---
+import { t, type Key, type Lang } from '../i18n';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const qs = [1, 2, 3, 4].map((n) => [`faq.${n}.q`, `faq.${n}.a`] as [Key, Key]);
+---
+<section id="faq" class="faq" aria-labelledby="faq-title">
+  <div class="wrap">
+    <h2 id="faq-title">{t(lang, 'faq.title')}</h2>
+    {qs.map(([q, a]) => (
+      <details>
+        <summary>{t(lang, q)}</summary>
+        <p>{t(lang, a)}</p>
+      </details>
+    ))}
+  </div>
+</section>
+<style>
+  .faq { padding: 64px 0; background: var(--white); }
+  details { border-bottom: 1px solid var(--grey-1); }
+  summary { cursor: pointer; font-weight: 700; color: var(--navy); padding: 16px 0; min-height: 48px; }
+  summary::marker { color: var(--navy); }
+  p { margin: 0 0 16px; }
+</style>

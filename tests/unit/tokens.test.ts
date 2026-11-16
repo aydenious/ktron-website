@@ -1,8 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { tokenValue } from '../../src/styles/token';
 
 const css = readFileSync('src/styles/tokens.css', 'utf8');
-const token = (name: string) => css.match(new RegExp(`--${name}:\\s*([^;]+);`))?.[1].trim();
+const token = (name: string) => tokenValue(css, name);
 
 describe('colour tokens (PRD §7)', () => {
   it.each([
@@ -16,5 +17,10 @@ describe('colour tokens (PRD §7)', () => {
   it('Chinese text uses the system Simplified Chinese fonts (Ruling 1)', () => {
     expect(token('font-zh')).toContain('"PingFang SC"');
     expect(token('font-zh')).toContain('"Microsoft YaHei"');
+  });
+
+  it('tokenValue returns the declared value and throws for a missing token', () => {
+    expect(tokenValue(':root { --navy: #0B2545; }', 'navy')).toBe('#0B2545');
+    expect(() => tokenValue(':root { --gold: #C9A227; }', 'navy')).toThrow(/navy/);
   });
 });

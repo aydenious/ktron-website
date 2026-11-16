@@ -1,0 +1,41 @@
+---
+import { Picture } from 'astro:assets';
+import { photos, positionOf, type PhotoId } from '../assets/photos';
+import { t, type Key, type Lang } from '../i18n';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const cards: [PhotoId, Key, Key][] = [
+  ['trimming', 'services.trimming.name', 'services.trimming.text'],
+  ['deflashing', 'services.deflashing.name', 'services.deflashing.text'],
+  ['inspection', 'services.inspection.name', 'services.inspection.text'],
+  ['sorting', 'services.sorting.name', 'services.sorting.text'],
+  ['rework', 'services.rework.name', 'services.rework.text'],
+];
+---
+<section id="services" class="services" aria-labelledby="services-title">
+  <div class="wrap">
+    <h2 id="services-title">{t(lang, 'services.title')}</h2>
+    <ul role="list">
+      {cards.map(([id, name, text]) => (
+        <li>
+          <Picture src={photos[id]} alt={t(lang, `photo.${id}.alt` as Key)} formats={['avif', 'webp']}
+            widths={[400, 800]} sizes="(min-width: 960px) 30vw, (min-width: 600px) 45vw, 100vw" loading="lazy" style={`object-position: ${positionOf(id)}`} />
+          <h3>{t(lang, name)}</h3>
+          <p>{t(lang, text)}</p>
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>
+<style>
+  .services { padding: 64px 0; background: var(--white); }
+  ul { list-style: none; padding: 0; margin: 24px 0 0; display: grid; gap: 24px; }
+  li { background: var(--paper); border-radius: var(--radius); overflow: hidden; }
+  /* One crop for every card, so the portrait inspection photo matches the landscape ones. */
+  li :global(img) { aspect-ratio: 4 / 3; object-fit: cover; width: 100%; height: auto; }
+  h3, p { margin-inline: 18px; }
+  h3 { margin-top: 16px; }
+  p { margin-bottom: 20px; }
+  @media (min-width: 600px) { ul { grid-template-columns: 1fr 1fr; } }
+  @media (min-width: 960px) { ul { grid-template-columns: repeat(3, 1fr); } }
+</style>

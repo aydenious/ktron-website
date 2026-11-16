@@ -1,0 +1,62 @@
+---
+import Logo from './Logo.astro';
+import { LANGS, otherLang, t, type Lang, type Key } from '../i18n';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const other = otherLang(lang);
+const links: [string, Key][] = [['services', 'nav.services'], ['how', 'nav.how'], ['traceability', 'nav.trace'], ['contact', 'nav.contact']];
+---
+<a class="skip" href="#main">{t(lang, 'nav.skip')}</a>
+<header class="site-header">
+  <div class="wrap bar">
+    <a class="logo" href={LANGS[lang].path}><Logo /></a>
+    <nav class="desk" aria-label={t(lang, 'nav.menu')}>
+      {links.map(([id, key]) => <a href={`#${id}`}>{t(lang, key)}</a>)}
+    </nav>
+    <a class="lang" href={LANGS[other].path} hreflang={LANGS[other].htmlLang} lang={LANGS[other].htmlLang}
+       data-keep-hash>{t(lang, 'lang.other')}</a>
+    <details class="menu">
+      <summary>{t(lang, 'nav.menu')}</summary>
+      <nav aria-label={t(lang, 'nav.menu')}>
+        {links.map(([id, key]) => <a href={`#${id}`}>{t(lang, key)}</a>)}
+      </nav>
+    </details>
+  </div>
+</header>
+<script>
+  // The language switch lands on the same section; the phone menu closes after a tap.
+  for (const a of document.querySelectorAll<HTMLAnchorElement>('a[data-keep-hash]')) {
+    a.addEventListener('click', () => { a.hash = location.hash; });
+  }
+  for (const d of document.querySelectorAll<HTMLDetailsElement>('details.menu')) {
+    d.addEventListener('click', (e) => { if ((e.target as Element).closest('a')) d.open = false; });
+  }
+</script>
+<style>
+  .skip { position: absolute; left: -999px; top: 8px; background: var(--navy); color: var(--paper); padding: 8px 12px; z-index: 100; }
+  .skip:focus { left: 8px; }
+  .site-header { position: sticky; top: 0; z-index: 40; background: var(--paper-glass);
+    backdrop-filter: blur(8px); border-bottom: 1px solid var(--grey-1); }
+  :global(main [id]) { scroll-margin-top: 72px; } /* anchor targets clear the 64 px sticky header */
+  .bar { display: flex; align-items: center; gap: 16px; min-height: 64px; }
+  .logo { display: inline-flex; align-items: center; min-block-size: 44px; } /* tap target of at least 44 px */
+  .logo :global(svg) { width: 120px; }
+  .desk { display: none; margin-left: auto; gap: 24px; }
+  .desk a, .menu a { color: var(--slate); text-decoration: none; font-weight: 600; }
+  .lang { margin-left: auto; font-weight: 700; color: var(--navy); min-width: 48px; min-height: 48px;
+    display: grid; place-items: center; }
+  .menu summary { list-style: none; cursor: pointer; font-weight: 700; color: var(--navy);
+    min-height: 48px; display: grid; place-items: center; padding: 0 8px; }
+  .menu summary::-webkit-details-marker { display: none; }
+  /* A closed menu still lays its content out in Chrome (its last boxes can pass the viewport edge),
+     so hide it outright; the tap target test also skips it this way. */
+  .menu:not([open]) nav { display: none; }
+  .menu nav { position: absolute; left: 0; right: 0; top: 64px; display: grid; background: var(--paper);
+    border-bottom: 1px solid var(--grey-1); padding: 8px var(--gutter) 16px; }
+  .menu nav a { padding: 12px 0; }
+  @media (min-width: 768px) {
+    .desk { display: flex; }
+    .lang { margin-left: 8px; }
+    .menu { display: none; }
+  }
+</style>
