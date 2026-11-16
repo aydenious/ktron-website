@@ -16,6 +16,10 @@ states its net lines; every fix also adds a guard against its whole class. The g
 
 npm ci · npm run dev · npm run check · npm run build · npm test · npm run quality · npm run verify
 
+Run npm on Node 24, the version in `.nvmrc` and CI (`nvm use`, or put `~/.nvm/versions/node/v24.*/bin` first on
+PATH). `.npmrc` sets `engine-strict`, so npm on another Node refuses to install: a lockfile written by another
+npm fails `npm ci` in CI.
+
 ## Rules
 
 - Never name a customer anywhere: pages, alt text, file names, commits, PR text.
