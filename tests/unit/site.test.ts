@@ -1,5 +1,6 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { CONTACT, COMPANY } from '../../src/site';
+import { ADDRESS, CONTACT, COMPANY } from '../../src/site';
 
 describe('contact constants (gate 4)', () => {
   it('are exact', () => {
@@ -10,5 +11,15 @@ describe('contact constants (gate 4)', () => {
     expect(CONTACT.email).toBe('sales@ktron.my');
     expect(CONTACT.address).toBe('Jalan Paprika 5, Taman Pulai Hijauan, 81300 Skudai, Johor');
     expect(COMPANY.line).toBe('Ktron Engineering Enterprise (JM0870519-U)');
+  });
+  it('the address parts join to the one-line address', () => {
+    expect(`${ADDRESS.street}, ${ADDRESS.postalCode} ${ADDRESS.locality}, ${ADDRESS.region}`).toBe(CONTACT.address);
+  });
+});
+
+describe('Chinese type outside a Chinese page', () => {
+  it('any element in Chinese gets the Chinese font and line height, not only the body of a zh page', () => {
+    const css = readFileSync('src/styles/global.css', 'utf8');
+    expect(css).toMatch(/(?:^|\n):lang\(zh\)\s*\{[^}]*--font-zh[^}]*line-height:\s*1\.75/);
   });
 });

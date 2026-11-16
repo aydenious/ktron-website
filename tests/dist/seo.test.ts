@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { ADDRESS, CONTACT } from '../../src/site';
 import en from '../../src/i18n/en.json';
 import zh from '../../src/i18n/zh.json';
 import { page } from './dist';
@@ -38,7 +39,12 @@ describe.each(PAGES)('$path search data', ({ path, lang, s, canonical }) => {
     expect(ld.telephone).toBe('+60105454173');
     expect(ld.address.postalCode).toBe('81300');
     expect(ld.areaServed).toHaveLength(8);
-    expect(ld).not.toHaveProperty('openingHours');
+    for (const key of ['openingHours', 'priceRange', 'aggregateRating', 'review']) expect(ld).not.toHaveProperty(key);
+  });
+  it('the JSON-LD address is the contact address', () => {
+    const a = JSON.parse(doc.querySelector('script[type="application/ld+json"]')!.text).address;
+    expect(`${a.streetAddress}, ${a.postalCode} ${a.addressLocality}, ${a.addressRegion}`).toBe(CONTACT.address);
+    expect(a.streetAddress).toBe(ADDRESS.street);
   });
 });
 

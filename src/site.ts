@@ -1,5 +1,12 @@
 export const SITE_URL = 'https://ktron.my';
 
+export const ADDRESS = {
+  street: 'Jalan Paprika 5, Taman Pulai Hijauan',
+  postalCode: '81300',
+  locality: 'Skudai',
+  region: 'Johor',
+} as const;
+
 export const CONTACT = {
   whatsapp: 'https://wa.me/60105454173',
   tel: 'tel:+60105454173',
@@ -7,7 +14,7 @@ export const CONTACT = {
   phoneShown: '010-545 4173',
   email: 'sales@ktron.my',
   mailto: 'mailto:sales@ktron.my',
-  address: 'Jalan Paprika 5, Taman Pulai Hijauan, 81300 Skudai, Johor',
+  address: `${ADDRESS.street}, ${ADDRESS.postalCode} ${ADDRESS.locality}, ${ADDRESS.region}`,
   directions:
     'https://www.google.com/maps/dir/?api=1&destination=Jalan+Paprika+5%2C+Taman+Pulai+Hijauan%2C+81300+Skudai%2C+Johor',
 } as const;

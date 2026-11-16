@@ -1,16 +1,16 @@
 ---
-import { siWhatsapp } from 'simple-icons';
+import WhatsAppIcon from './WhatsAppIcon.astro';
 import { CONTACT } from '../site';
 import { t, type Lang } from '../i18n';
 interface Props { lang: Lang }
 const { lang } = Astro.props;
 ---
 <a class="float-wa" href={CONTACT.whatsapp} target="_blank" rel="noopener" aria-label={t(lang, 'float.whatsapp')}>
-  <svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><path fill="currentColor" d={siWhatsapp.path} /></svg>
+  <WhatsAppIcon size={30} />
 </a>
 <style>
   .float-wa { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 50;
-    display: grid; place-items: center; width: 60px; height: 60px; border-radius: 50%; color: var(--paper);
+    display: grid; place-items: center; width: 60px; height: 60px; border-radius: 50%; color: var(--navy);
     background: var(--whatsapp); box-shadow: var(--shadow-float); }
   @media (min-width: 768px) { .float-wa { display: none; } }
 </style>

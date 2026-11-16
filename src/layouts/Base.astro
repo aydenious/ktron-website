@@ -1,7 +1,9 @@
 ---
 import '@fontsource-variable/manrope';
 import '../styles/global.css';
-import { AREA_NAMES_EN, COMPANY, CONTACT, SITE_URL } from '../site';
+import tokensCss from '../styles/tokens.css?raw';
+import { tokenValue } from '../styles/token';
+import { ADDRESS, AREA_NAMES_EN, COMPANY, CONTACT, SITE_URL } from '../site';
 import { LANGS, type Lang } from '../i18n';
 
 interface Props {
@@ -28,10 +30,10 @@ const ld = {
   email: CONTACT.email,
   address: {
     '@type': 'PostalAddress',
-    streetAddress: 'Jalan Paprika 5, Taman Pulai Hijauan',
-    postalCode: '81300',
-    addressLocality: 'Skudai',
-    addressRegion: 'Johor',
+    streetAddress: ADDRESS.street,
+    postalCode: ADDRESS.postalCode,
+    addressLocality: ADDRESS.locality,
+    addressRegion: ADDRESS.region,
     addressCountry: 'MY',
   },
   areaServed: AREA_NAMES_EN.map((name) => ({ '@type': 'Place', name })),
@@ -58,7 +60,7 @@ const ld = {
     <meta property="og:image:height" content="630" />
     <meta property="og:locale" content={lang === 'en' ? 'en_MY' : 'zh_CN'} />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="theme-color" content="#0B2545" />
+    <meta name="theme-color" content={tokenValue(tokensCss, 'navy')} />
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />

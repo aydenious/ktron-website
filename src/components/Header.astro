@@ -1,5 +1,5 @@
 ---
-import logo from '../brand/logo.svg?raw';
+import Logo from './Logo.astro';
 import { LANGS, otherLang, t, type Lang, type Key } from '../i18n';
 interface Props { lang: Lang }
 const { lang } = Astro.props;
@@ -9,12 +9,12 @@ const links: [string, Key][] = [['services', 'nav.services'], ['how', 'nav.how']
 <a class="skip" href="#main">{t(lang, 'nav.skip')}</a>
 <header class="site-header">
   <div class="wrap bar">
-    <a class="logo" href={LANGS[lang].path} aria-label="KTRON" set:html={logo} />
+    <a class="logo" href={LANGS[lang].path}><Logo /></a>
     <nav class="desk" aria-label={t(lang, 'nav.menu')}>
       {links.map(([id, key]) => <a href={`#${id}`}>{t(lang, key)}</a>)}
     </nav>
     <a class="lang" href={LANGS[other].path} hreflang={LANGS[other].htmlLang} lang={LANGS[other].htmlLang}
-       aria-label={t(lang, 'lang.switchLabel')} data-keep-hash>{t(lang, 'lang.other')}</a>
+       data-keep-hash>{t(lang, 'lang.other')}</a>
     <details class="menu">
       <summary>{t(lang, 'nav.menu')}</summary>
       <nav aria-label={t(lang, 'nav.menu')}>
@@ -39,6 +39,7 @@ const links: [string, Key][] = [['services', 'nav.services'], ['how', 'nav.how']
     backdrop-filter: blur(8px); border-bottom: 1px solid var(--grey-1); }
   :global(main [id]) { scroll-margin-top: 72px; } /* anchor targets clear the 64 px sticky header */
   .bar { display: flex; align-items: center; gap: 16px; min-height: 64px; }
+  .logo { display: inline-flex; align-items: center; min-block-size: 44px; } /* tap target of at least 44 px */
   .logo :global(svg) { width: 120px; }
   .desk { display: none; margin-left: auto; gap: 24px; }
   .desk a, .menu a { color: var(--slate); text-decoration: none; font-weight: 600; }

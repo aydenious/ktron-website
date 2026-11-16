@@ -1,11 +1,11 @@
 ---
 import Base from '../layouts/Base.astro';
-import logo from '../brand/logo.svg?raw';
+import Logo from '../components/Logo.astro';
 import { t } from '../i18n';
 ---
 <Base lang="en" title="Page not found · 找不到页面" description={t('en', 'notfound.text')} path="/404.html" noindex>
   <main id="main" class="wrap nf">
-    <div class="logo" set:html={logo} />
+    <div class="logo"><Logo /></div>
     <section>
       <h1>{t('en', 'notfound.title')}</h1>
       <p>{t('en', 'notfound.text')}</p>
@@ -21,4 +21,5 @@ import { t } from '../i18n';
 <style>
   .nf { padding: 64px var(--gutter); display: grid; gap: 32px; }
   .logo :global(svg) { width: 160px; }
+  section a { display: inline-flex; align-items: center; min-block-size: 44px; } /* tap target of at least 44 px */
 </style>

@@ -1,0 +1,7 @@
+---
+import Colour from '../brand/logo.svg';
+import White from '../brand/logo-white.svg';
+interface Props { variant?: 'colour' | 'white' }
+const { variant = 'colour' } = Astro.props;
+---
+{variant === 'white' ? <White aria-label="KTRON" /> : <Colour aria-label="KTRON" />}

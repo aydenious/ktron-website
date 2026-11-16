@@ -20,8 +20,10 @@ const { lang } = Astro.props;
 </section>
 <style>
   .contact { padding: 64px 0; background: var(--gold-soft); }
-  dl { display: grid; grid-template-columns: max-content 1fr; gap: 8px 16px; margin: 24px 0; }
+  dl { display: grid; grid-template-columns: max-content 1fr; align-items: center; gap: 8px 16px; margin: 24px 0; }
   dt { font-weight: 700; color: var(--navy); }
   dd { margin: 0; overflow-wrap: anywhere; }
+  /* Tap targets are at least 44 px tall (WCAG 2.5.8; Task 9 checks every control in a browser). */
+  dd a { display: inline-flex; align-items: center; min-block-size: 44px; }
   .reg { font-size: 0.9rem; }
 </style>

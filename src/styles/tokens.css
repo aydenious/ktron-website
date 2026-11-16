@@ -1,4 +1,5 @@
 :root {
+  /* Every colour pair the CSS uses is listed, with its WCAG ratio floor, in tests/unit/contrast.test.ts. */
   --navy: #0B2545;
   --navy-2: #13315C;
   --gold: #C9A227;

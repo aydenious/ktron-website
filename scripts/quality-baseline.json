@@ -1,8 +1,8 @@
 {
   "metrics": {
-    "pattern.hex_colour_outside_tokens": 2,
+    "pattern.hex_colour_outside_tokens": 1,
     "pattern.colour_function_outside_tokens": 0,
-    "pattern.set_html": 6,
+    "pattern.set_html": 3,
     "pattern.console_in_src": 0,
     "pattern.swallowed_error": 0,
     "pattern.risky_dom": 0,
@@ -10,7 +10,7 @@
     "pattern.test_skip": 0,
     "size.files_over_400_lines": 0,
     "tools.jscpd_clones": 0,
-    "tools.knip_findings": 5
+    "tools.knip_findings": 4
   },
   "history": [
     {

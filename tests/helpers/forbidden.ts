@@ -2,7 +2,12 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 
 // SHA-256 of forbidden lower-case words. Never write the words themselves in this repo.
-export const FORBIDDEN: ReadonlySet<string> = new Set([
+// Limits: a hash is of one lower-case token with no spaces or hyphens (joins are concatenated);
+// slices cover 4-16 characters, so a shorter or longer form is only found as a whole token or join;
+// names of 4 or more parts, HTML entities, \u escapes and homoglyphs are not covered; each short
+// form needs its own hash. A false positive is fixed with a reviewed allow-list of exact
+// exceptions, never by weakening the detector.
+const FORBIDDEN: ReadonlySet<string> = new Set([
   '7ff26ca7636fecde95757c88c79117cd5733344dce935994ba0683bd8ae30471',
 ]);
 
@@ -48,7 +53,25 @@ export function forbiddenHits(text: string, hashes: ReadonlySet<string> = FORBID
 }
 
 /** Text of a file, or null when it is binary (a NUL byte in the first 8 KB). */
-export function textOf(file: string): string | null {
+function textOf(file: string): string | null {
   const buf = readFileSync(file);
   return buf.subarray(0, 8192).includes(0) ? null : buf.toString('utf8');
+}
+
+/** One line per file whose name or text holds a forbidden word. Binary files: name only. */
+export function scanFiles(paths: string[], hashes: ReadonlySet<string> = FORBIDDEN): string[] {
+  const offenders: string[] = [];
+  for (const file of paths) {
+    const found = forbiddenHits(file, hashes).map((h) => `name ${h}`);
+    const text = textOf(file);
+    if (text !== null) found.push(...forbiddenHits(text, hashes).map((h) => `text ${h}`));
+    if (found.length) offenders.push(`${file}: ${found.join(', ')}`);
+  }
+  return offenders;
+}
+
+/** The same for a block of text that is not a file, such as the commit messages. */
+export function scanText(label: string, text: string, hashes: ReadonlySet<string> = FORBIDDEN): string[] {
+  const found = forbiddenHits(text, hashes);
+  return found.length ? [`${label}: ${found.join(', ')}`] : [];
 }
