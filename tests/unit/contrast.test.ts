@@ -77,12 +77,36 @@ const GRAPHIC_RULES = ['.float-wa'];
 const NAVY_WITHOUT_ON_DARK: [file: string, selector: string, reason: string][] = [
   ['src/components/Header.astro', '.skip', 'the skip link is a small navy box over the paper header; its ring sits outside it, on paper'],
   ['src/pages/brand.astro', '.tile.navy', 'brand preview page, removed at launch; a logo swatch, not a control'],
+  ['src/pages/og/[lang].astro', 'body', 'the share-image page puts on-dark on <html>, the one root; body paints that same navy'],
 ];
 // Decorative edges: the text or shape beside them, not the line, identifies the thing.
 const DECORATIVE_EDGE_TOKENS = ['grey-1', 'grey-2']; // dividers and pill outlines
 const DECORATIVE_EDGE_RULES = [['src/components/WhyOutsource.astro', '.close']]; // gold accent bar beside bold text
 // Light or mid colours that are only text on a dark section (they are < 4.5:1 on paper and white).
 const DARK_ONLY_TEXT = ['gold', 'gold-soft', 'whatsapp', 'grey-1', 'grey-2', 'grey-3', 'white', 'paper'];
+// Light colours that disappear as a `fill` or `stroke` on a light background (gold and the
+// WhatsApp green stay visible, and the scene's own sky is dealt with below).
+const LIGHT_GRAPHIC = ['white', 'paper', 'grey-1', 'grey-2', 'grey-3', 'gold-soft'];
+// One drawing whose fills sit on its own sky, not on the page: day is grey-1, night is navy.
+const GRAPHIC_FILES: [file: string, reason: string][] = [
+  ['src/components/scene/Scene.astro', 'an illustration: its fills sit on its own sky (grey-1 by day, navy by night), not on the page'],
+];
+const VOID_ELEMENTS = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr']);
+
+/** The element names of a component's top-level nodes (comments and void tags handled). */
+function topLevelElements(markup: string): string[] {
+  const out: string[] = [];
+  let depth = 0;
+  for (const m of markup.matchAll(/<!--[\s\S]*?-->|<\/?([a-z][\w.-]*)\b[^>]*?(\/?)>/gi)) {
+    if (!m[1]) continue; // a comment
+    if (m[0].startsWith('</')) depth -= 1;
+    else {
+      if (depth === 0) out.push(m[1].toLowerCase());
+      if (!m[2] && !VOID_ELEMENTS.has(m[1].toLowerCase())) depth += 1;
+    }
+  }
+  return out;
+}
 
 const tokenOf = (v: string | undefined) => v?.match(/^var\(--([\w-]+)\)$/)?.[1];
 const varsIn = (v: string) => [...v.matchAll(/var\(--([\w-]+)\)/g)].map((m) => m[1]).filter((n) => { try { colour(n); return true; } catch { return false; } });
@@ -96,9 +120,11 @@ function contrastProblems(rules: Rule[], markup: (file: string) => string): stri
   const darkFile = (f: string) => /class(?::list)?=[^>]*\bon-dark\b/.test(markup(f));
   for (const f of new Set(rules.map((r) => r.file)).values()) {
     if (!darkFile(f)) continue;
-    // A dark file is dark from its first element to its last, so the whole-file exemption stays sound.
+    // A dark file is dark from its first element to its last, so the whole-file exemption stays
+    // sound only when on-dark is on the single top-level element: a light sibling root would hide.
     const m = markup(f);
-    if ((m.match(/\bon-dark\b/g) ?? []).length !== 1 || !/^\s*<[a-z][^>]*\bon-dark\b/i.test(m)) out.push(`${f}: on-dark must be on the root element, once`);
+    if ((m.match(/\bon-dark\b/g) ?? []).length !== 1 || topLevelElements(m).length !== 1 || !/^\s*<[a-z][^>]*\bon-dark\b/i.test(m))
+      out.push(`${f}: on-dark must be on the one top-level element, once`);
     // Headings take the global navy colour, so each one used in a dark file needs its own light colour.
     for (const tag of new Set([...m.matchAll(/<(h[1-3])\b/g)].map((x) => x[1]))) {
       const light = rules.some((r) => r.file === f && new RegExp(`(^|[\\s,>])${tag}(?![\\w-])`).test(r.selector) && inTable(tokenOf(r.decl.color) ?? '', 'navy', TEXT));
@@ -125,6 +151,13 @@ function contrastProblems(rules: Rule[], markup: (file: string) => string): stri
     if (fg && r.selector.includes('::marker') && !NON_TEXT.some(([n, f]) => /^marker/.test(n) && f === fg)) out.push(`${where}: marker colour ${fg} is in no marker pair`);
     if (fg && DARK_ONLY_TEXT.includes(fg) && !r.selector.includes('.on-dark') && !darkFile(r.file) && !(bg && inTable(fg, bg, TEXT))) {
       out.push(`${where}: ${fg} text outside a dark section`);
+    }
+    // A light shape is as invisible as light text: a `fill`/`stroke` must not vanish on the page.
+    for (const prop of ['fill', 'stroke'] as const) {
+      const g = tokenOf(r.decl[prop]);
+      if (!g || !LIGHT_GRAPHIC.includes(g) || GRAPHIC_FILES.some(([file]) => file === r.file)) continue;
+      if (r.selector.includes('.on-dark') || darkFile(r.file) || (bg && inTable(g, bg, NON_TEXT))) continue;
+      out.push(`${where}: ${prop} ${g} would vanish on a light background`);
     }
     for (const e of edgesOf(r)) {
       if (DECORATIVE_EDGE_TOKENS.includes(e) || DECORATIVE_EDGE_RULES.some(([f, s]) => f === r.file && s === r.selector)) continue;
@@ -190,6 +223,19 @@ describe('contrast (WCAG 2.2 AA)', () => {
     it('a dark file has on-dark once, on its root element', () => {
       expect(run('p { color: var(--white); }', '<section class="a on-dark"><div class="b on-dark"></div></section>')).toHaveLength(1);
       expect(run('p { color: var(--white); }', '<div><section class="a on-dark"></section></div>')).toHaveLength(1);
+    });
+    it('a dark file has exactly one top-level element, so a light sibling root cannot hide', () => {
+      expect(run('p { color: var(--white); }', '<section class="a on-dark"></section><section class="b"><span class="c"></span></section>')).toHaveLength(1);
+      expect(run('p { color: var(--white); }', '<section class="a on-dark"></section>')).toEqual([]);
+    });
+    it('flags a light fill or stroke that would vanish on a light background', () => {
+      expect(run('path { fill: var(--white); }', 'class="x"')).toHaveLength(1);
+      expect(run('path { stroke: var(--paper); }', 'class="x"')).toHaveLength(1);
+      expect(run('path { fill: var(--white); }', 'class="x on-dark"')).toEqual([]);
+      expect(run('.a { fill: var(--paper); background: var(--navy); }', 'class="a on-dark"')).toEqual([]);
+      expect(run('path { fill: var(--gold); }', 'class="x"')).toEqual([]);
+      // The scene illustration paints on its own sky (documented exemption).
+      expect(run('path { fill: var(--white); }', 'class="x"', 'src/components/scene/Scene.astro')).toEqual([]);
     });
     it('covers ::marker colours: a marker needs a marker pair', () => {
       expect(run('li::marker { color: var(--navy); }', 'class="x"')).toEqual([]);

@@ -48,6 +48,9 @@ const links: [string, Key][] = [['services', 'nav.services'], ['how', 'nav.how']
   .menu summary { list-style: none; cursor: pointer; font-weight: 700; color: var(--navy);
     min-height: 48px; display: grid; place-items: center; padding: 0 8px; }
   .menu summary::-webkit-details-marker { display: none; }
+  /* A closed menu still lays its content out in Chrome (its last boxes can pass the viewport edge),
+     so hide it outright; the tap target test also skips it this way. */
+  .menu:not([open]) nav { display: none; }
   .menu nav { position: absolute; left: 0; right: 0; top: 64px; display: grid; background: var(--paper);
     border-bottom: 1px solid var(--grey-1); padding: 8px var(--gutter) 16px; }
   .menu nav a { padding: 12px 0; }

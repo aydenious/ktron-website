@@ -2,7 +2,7 @@
   "metrics": {
     "pattern.hex_colour_outside_tokens": 1,
     "pattern.colour_function_outside_tokens": 0,
-    "pattern.set_html": 3,
+    "pattern.set_html": 4,
     "pattern.console_in_src": 0,
     "pattern.swallowed_error": 0,
     "pattern.risky_dom": 0,
@@ -97,6 +97,11 @@
       "date": "2026-11-16",
       "change": "tools.knip_findings: 3 → 5",
       "reason": "plan Task 6 produces src/assets/photos/index.ts with photos: Record<PhotoId, ImageMetadata> and the PhotoId type (the task's Interfaces section) for plan Task 7's <Picture> rendering, so knip reports those two exports unused until Task 7 lands, as it did for the Task 4 i18n and site constants; the count falls when Task 7 consumes them"
+    },
+    {
+      "date": "2026-11-16",
+      "change": "pattern.set_html: 3 → 4",
+      "reason": "plan Task 9 step 8: the share-image page inlines logo-white.svg with set:html so /og/en/ and /og/zh/ can be screenshotted into public/og/*.png"
     }
   ]
 }
