@@ -41,6 +41,9 @@ describe('i18n strings (gate 2)', () => {
     expect(zh['faq.3.q']).toBe('如果我们把批次退回给贵公司呢？');
     expect(zh['trace.mock.control']).toBe('控制编号');
     expect(zh['nav.trace']).toBe('批次追溯');
-    expect(Object.values(zh).join('')).not.toContain('手工具');
+    // Retired terms: one word per idea across the whole page.
+    const RETIRED = ['手工具', '控制号'];
+    const hits = Object.entries(zh).filter(([, v]) => RETIRED.some((t) => v.includes(t))).map(([k]) => k);
+    expect(hits).toEqual([]);
   });
 });
