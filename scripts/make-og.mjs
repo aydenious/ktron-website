@@ -13,11 +13,12 @@ if (!/Noto Sans CJK SC|Source Han Sans SC/.test(families)) {
 
 const BASE = 'http://localhost:4330';
 // --ignore-lock keeps the preview in the foreground: an agent-run `astro preview` otherwise
-// background itself, so this script could neither wait for it nor stop it.
-const server = spawn('npx', ['astro', 'preview', '--ignore-lock', '--port', '4330'], { stdio: 'ignore' });
+// background itself, so this script could neither wait for it nor stop it. The server is its
+// own process group (detached), so `finally` stops astro and anything it started, not just a wrapper.
+const server = spawn('node_modules/.bin/astro', ['preview', '--ignore-lock', '--port', '4330'], { stdio: 'ignore', detached: true });
 try {
   for (let i = 0; ; i++) {
-    // A refused connection means the server is not up yet; a reply of any kind means it is.
+    // A refused connection means the server is not up yet; an OK reply means it serves the page.
     const ready = await fetch(`${BASE}/og/en/`).then((r) => r.ok, () => false);
     if (ready) break;
     if (i === 50) throw new Error('astro preview did not start on :4330');
@@ -34,5 +35,5 @@ try {
   }
   await browser.close();
 } finally {
-  server.kill();
+  process.kill(-server.pid, 'SIGTERM'); // the whole group
 }

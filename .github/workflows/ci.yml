@@ -27,6 +27,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: reports
+          include-hidden-files: true # .lighthouseci/ is a hidden folder
           path: |
             playwright-report/
             .lighthouseci/
