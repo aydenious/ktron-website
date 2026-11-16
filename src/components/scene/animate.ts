@@ -1,5 +1,6 @@
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { refreshWhenFontsSettle } from './fonts';
 import { STEPS, stateAt, stepOf, view, type SceneState } from './steps';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -27,8 +28,18 @@ function painter(svg: SVGSVGElement): (s: SceneState) => void {
   };
 }
 
+/** How the reader got here, decided by the loader before the script was fetched. */
+interface Arrival {
+  /** The fragment target of the page load that is still scrolling there; null for any other way of arriving. */
+  deepLink: Element | null;
+  /** The target of a header link clicked, whose smooth scroll is still running; null otherwise. */
+  linkTarget: Element | null;
+  /** True while the reader has done nothing since the load, so the page's own scroll may still be landing. */
+  arriving: () => boolean;
+}
+
 /** Turns the five stills of section#how into one pinned scene scrubbed by scrolling. */
-export function setup(section: HTMLElement): void {
+export function setup(section: HTMLElement, arrival: Arrival): void {
   const list = section.querySelector<HTMLElement>('ol[data-stills]')!;
   const stills = [...list.querySelectorAll('li[data-step]')];
   const words = stills.map((li) => ({
@@ -37,18 +48,21 @@ export function setup(section: HTMLElement): void {
   }));
 
   // Review Focus 3: whatever the reader is looking at below this section must not move.
-  // The browser's own scroll anchoring is switched off so the correction below is the only one.
+  // While the section grows, the browser's own scroll anchoring and global.css's smooth scrolling
+  // are both off, so the corrections below are instant, ordered and the only scrolls there are.
   const root = document.documentElement;
-  // A deep link's own scroll is still running here (global.css makes it smooth) and the growth
-  // below would abort it, leaving the reader short of the target. Finish it first, at once.
-  const linked = location.hash ? document.getElementById(decodeURIComponent(location.hash.slice(1))) : null;
-  const jumped = !!linked && linked.getBoundingClientRect().top > innerHeight;
-  if (jumped) linked.scrollIntoView({ behavior: 'instant', block: 'start' });
+  root.style.scrollBehavior = 'auto';
+  root.style.overflowAnchor = 'none';
+  const { deepLink, linkTarget, arriving } = arrival;
+  // A deep link's own scroll is still running here and the growth below would abort it, leaving the
+  // reader short of the target. Finish it first, at once.
+  if (deepLink && deepLink.getBoundingClientRect().top > innerHeight) deepLink.scrollIntoView({ behavior: 'instant', block: 'start' });
   const readerIsBelow = section.getBoundingClientRect().top < 0;
+  // A clicked header link's smooth scroll was aimed before the growth; aim it again afterwards.
+  const reaim = !!linkTarget && linkTarget.getBoundingClientRect().top > 0;
   // The section's own bottom edge measures the growth: everything below it moves by that much.
   // (section.nextElementSibling is Astro's script tag, which has no box to measure.)
   const before = section.getBoundingClientRect().bottom;
-  root.style.overflowAnchor = 'none';
 
   const stage = document.createElement('div');
   stage.className = 'stage';
@@ -93,21 +107,26 @@ export function setup(section: HTMLElement): void {
     },
   });
   ScrollTrigger.refresh();
+  refreshWhenFontsSettle(document.fonts, () => ScrollTrigger.refresh());
 
   if (readerIsBelow) {
     const shift = section.getBoundingClientRect().bottom - before;
     if (Math.abs(shift) > 0.5) window.scrollBy({ top: shift, behavior: 'instant' });
     ScrollTrigger.update();
-    // The smooth scroll interrupted above commits its last frame after this one; hold the
-    // reader where the correction put them, so that frame cannot move the page under them.
-    if (jumped) {
-      const restored = scrollY;
-      requestAnimationFrame(() => {
-        if (Math.abs(scrollY - restored) > 0.5) window.scrollBy({ top: restored - scrollY, behavior: 'instant' });
-        ScrollTrigger.update();
-      });
-    }
   }
-  requestAnimationFrame(() => root.style.removeProperty('overflow-anchor'));
+  if (deepLink) {
+    // The browser's smooth scroll can still deliver a last frame measured before the growth. Whenever a
+    // scroll ends while the reader is still arriving, put the target back (a no-op once it is there).
+    const settle = () => {
+      if (!arriving()) return removeEventListener('scrollend', settle);
+      deepLink.scrollIntoView({ behavior: 'instant', block: 'start' });
+    };
+    addEventListener('scrollend', settle);
+  }
+  if (reaim) linkTarget.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  requestAnimationFrame(() => {
+    root.style.removeProperty('overflow-anchor');
+    root.style.removeProperty('scroll-behavior');
+  });
   section.dataset.ready = '';
 }

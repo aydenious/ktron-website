@@ -31,17 +31,28 @@ const { lang } = Astro.props;
     // setup never ran, so the list was never hidden and no stage was made.
   }
   if (section && !still && 'IntersectionObserver' in window) {
+    // How did the reader get here? Decided from what has happened since the page loaded, never from
+    // the URL alone: a hash left in the address bar (back button, reload) names nothing the reader wants.
+    const FRAGMENT_SCROLL_MS = 4000; // a page load's own scroll to its fragment is over by then
+    const nav = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
+    let touched = false; // the reader has scrolled, clicked or pressed a key since the load
+    let linkTarget: Element | null = null; // a header link was clicked and its scroll may still be running
+    const arriving = () => !touched && performance.now() < FRAGMENT_SCROLL_MS;
+    const touch = () => { touched = true; linkTarget = null; };
+    for (const type of ['wheel', 'touchstart', 'keydown', 'pointerdown']) addEventListener(type, touch, { passive: true });
+    addEventListener('hashchange', () => { touched = true; linkTarget = document.querySelector(':target'); });
     const io = new IntersectionObserver((entries) => {
       if (!entries.some((e) => e.isIntersecting)) return;
       io.disconnect();
-      import('./scene/animate').then(({ setup }) => setup(section), keepStills);
+      const deepLink = nav?.type === 'navigate' && arriving() ? document.querySelector(':target') : null;
+      import('./scene/animate').then(({ setup }) => setup(section, { deepLink, linkTarget, arriving }), keepStills);
     }, { rootMargin: '200px 0px' });
     io.observe(section);
   }
 </script>
 <style>
   .how { padding: 64px 0; }
-  .how :global(.stage) { min-height: calc(100svh - 64px); display: grid; align-content: center; padding-block: 16px; }
+  .how :global(.stage) { min-height: calc(100svh - var(--header-h)); display: grid; align-content: center; padding-block: 16px; }
   .stills { list-style: none; padding: 0; margin: 24px 0 0; display: grid; gap: 40px; }
   figure { margin: 0; display: grid; gap: 14px; }
   figure :global(svg.scene) { width: 100%; height: auto; border-radius: var(--radius); }
