@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="KTRON">
+  <rect width="64" height="64" rx="14" fill="#0B2545"/>
+  <path fill="#FFFFFF" d="M10 14H15V50H10Z M49 14H54V50H49Z"/>
+  <path fill="#C9A227" d="M15 32L26 25V39Z M49 32L38 25V39Z M26 30.5H38V33.5H26Z"/>
+</svg>

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="KTRON">
+  <rect width="64" height="64" rx="14" fill="#0B2545"/>
+  <g transform="translate(14 7) scale(0.5)">
+    <path fill="#FFFFFF" d="M0 0H20V100H0Z M52 0H78L20 60V38Z M20 62V40L78 100H52Z"/>
+    <path fill="#C9A227" d="M86 0H94L70 29H62Z"/>
+  </g>
+</svg>

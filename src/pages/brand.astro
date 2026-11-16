@@ -1,0 +1,83 @@
+---
+import '@fontsource-variable/manrope';
+import '../styles/global.css';
+import logo from '../brand/logo.svg?raw';
+import logoNavy from '../brand/logo-navy.svg?raw';
+import logoWhite from '../brand/logo-white.svg?raw';
+import icon from '../brand/icon.svg?raw';
+import pick from '../brand/pick.json';
+
+// Every pair is shown large, small, on gold-soft, and as a square icon at 64, 32 and 16 px.
+const pair = (art: string, mark: string) => [
+  { tile: 'w320', art },
+  { tile: 'w160', art },
+  { tile: 'soft w80', art },
+  { tile: 'i64', art: mark },
+  { tile: 'i32', art: mark },
+  { tile: 'i16', art: mark },
+];
+const chosen = [
+  { tile: 'w320', art: logo },
+  { tile: 'w320', art: logoNavy },
+  { tile: 'w320 navy', art: logoWhite },
+  { tile: 'i64', art: icon },
+  { tile: 'i32', art: icon },
+  { tile: 'i16', art: icon },
+];
+// One concept per file in brand/concepts: adding concept E there adds it here (and needs a line below).
+const svgs = import.meta.glob('../brand/concepts/*.svg', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
+const about: Record<string, { name: string; note: string }> = {
+  a: { name: 'The lens', note: 'Gold magnifier ring with a crosshair: 10x/30x inspection.' },
+  b: { name: 'The clean edge', note: 'A gold sliver trimmed off the K: precise handwork.' },
+  c: { name: 'The route', note: 'Factory → homes → inspection → back: the daily loop.' },
+  d: { name: 'The dimension mark', note: 'A navy stem and a gold chevron: an engineering dimension mark |<. The icon is |<—>|.' },
+};
+const ids = Object.keys(svgs).flatMap((f) => f.match(/logo-(\w+)\.svg$/)?.[1] ?? []).sort();
+// The pick first, then the rest in order.
+const concepts = [pick.pick, ...ids.filter((id) => id !== pick.pick)].map((id) => ({
+  id: id.toUpperCase(),
+  ...about[id],
+  tiles: pair(svgs[`../brand/concepts/logo-${id}.svg`], svgs[`../brand/concepts/icon-${id}.svg`]),
+}));
+const picked = concepts[0];
+---
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>KTRON brand</title>
+    <style>
+      .concept { padding: 32px 0; border-bottom: 1px solid var(--grey-1); }
+      .row { display: flex; flex-wrap: wrap; gap: 24px; align-items: center; }
+      .tile { padding: 24px; border-radius: var(--radius); background: #fff; }
+      .tile.soft { background: var(--gold-soft); }
+      .tile.navy { background: var(--navy); }
+      .w320 :global(svg) { width: 320px; } .w160 :global(svg) { width: 160px; } .w80 :global(svg) { width: 80px; }
+      .i64 :global(svg) { width: 64px; } .i32 :global(svg) { width: 32px; } .i16 :global(svg) { width: 16px; }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <h1>KTRON brand</h1>
+      <p>Final set: full colour, one-colour navy, one-colour white on navy, and the square icon at 64, 32 and 16 px.</p>
+      <section class="concept">
+        <h2>Final set ({picked?.id}, {picked?.name.toLowerCase()})</h2>
+        <div class="row">{chosen.map((t) => <div class={`tile ${t.tile}`} set:html={t.art} />)}</div>
+      </section>
+      <h2>Concepts</h2>
+      <p>
+        All four stay here so you can still choose. <code>npm run brand:pick a|b|c|d</code> rebuilds the final set from
+        one of them, then regenerates the favicon set from its icon.
+      </p>
+      {concepts.map((c) => (
+        <section class="concept">
+          <h2>{c.id}. {c.name}</h2>
+          <p>{c.note}</p>
+          <div class="row">{c.tiles.map((t) => <div class={`tile ${t.tile}`} set:html={t.art} />)}</div>
+        </section>
+      ))}
+    </main>
+  </body>
+</html>
+
