@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { compare, countPatterns, hardRules, knipCount } from '../../scripts/quality.mjs';
+import { checkAgainstBase, compare, countPatterns, hardRules, knipCount } from '../../scripts/quality.mjs';
 
 const file = (path: string, text: string) => ({ path, text });
 const lines = (n: number) => 'x\n'.repeat(n);
@@ -47,5 +47,81 @@ describe('quality gate', () => {
   });
   it('knipCount adds files, arrays and object keys', () => {
     expect(knipCount({ files: ['a.ts'], issues: [{ file: 'b.ts', owners: [], exports: [{}, {}], enumMembers: { E: [] } }] })).toBe(4);
+  });
+  it('counts json, js and svg files for the size ratchet, never svg colours', () => {
+    const c = countPatterns([
+      file('src/data.json', lines(401)),
+      file('scripts/tool.js', 'export const x = 1;'),
+      file('public/logo.svg', 'fill="#fff"'),
+      file('src/logo.svg', 'fill="#0B2545"'),
+    ]);
+    expect(c['size.files_over_400_lines']).toBe(1);
+    expect(c['pattern.hex_colour_outside_tokens']).toBe(0);
+  });
+  it.each(['&#169;', '&#8212;', 'url(#bad)', 'href="#add"', 'id="#fee"', '#fee-note', '#deflashing'])(
+    'does not take %s for a colour',
+    (s) => expect(countPatterns([file('src/a.astro', `x ${s} y`)])['pattern.hex_colour_outside_tokens']).toBe(0),
+  );
+  it.each(['#fff', '#0B2545', '#0B2545cc'])('counts %s as a colour', (s) =>
+    expect(countPatterns([file('src/a.astro', `x ${s} y`)])['pattern.hex_colour_outside_tokens']).toBe(1),
+  );
+  it('counts colour functions outside tokens.css only', () => {
+    const c = countPatterns([
+      file('src/a.css', 'a { background: rgb(0 0 0); color: oklch(50% 0.1 20); }'),
+      file('src/styles/tokens.css', '--x: rgba(1, 2, 3, 0.5);'),
+      file('src/logo.svg', 'fill="rgb(0,0,0)"'),
+    ]);
+    expect(c['pattern.colour_function_outside_tokens']).toBe(2);
+  });
+  it('counts comment-only catches and undefined/null/empty arrows as swallowed', () => {
+    const c = countPatterns([
+      file(
+        'src/a.ts',
+        'try { f() } catch (e) { /* ignore */ }\n' +
+          'try { g() } catch { // noop\n}\n' +
+          'const a = () => undefined;\nconst b = () => null;\nconst c = () => {};\n' +
+          'const d = () => { /* nothing */ };',
+      ),
+    ]);
+    expect(c['pattern.swallowed_error']).toBe(6);
+  });
+  it('counts risky DOM writes and eval', () => {
+    const c = countPatterns([
+      file('src/a.ts', 'el.innerHTML = h; el.outerHTML = h; el.insertAdjacentHTML("beforeend", h); document.write(h); eval(s); new Function("x")'),
+      file('scripts/b.mjs', 'el.innerHTML = h;'),
+    ]);
+    expect(c['pattern.risky_dom']).toBe(7);
+  });
+  it('counts every skip form', () => {
+    const c = countPatterns([
+      file('tests/unit/a.test.ts', 'it.skipIf(true)("x", f); it.todo("y"); test.fixme("z"); xit("a", f); xtest("b", f); xdescribe("c", f);'),
+    ]);
+    expect(c['pattern.test_skip']).toBe(6);
+  });
+});
+
+describe('checkAgainstBase', () => {
+  const history = [{ date: '2026-01-01', change: 'a: new → 0', reason: 'first baseline' }];
+  const base = { metrics: { a: 0 }, history };
+
+  it('accepts a rise whose history entry was added in the pull request', () => {
+    const head = { metrics: { a: 1 }, history: [...history, { date: '2026-02-02', change: 'a: 0 → 1', reason: 'why it rose' }] };
+    expect(checkAgainstBase(base, head)).toEqual([]);
+  });
+  it('rejects a hand-raised metric and a new metric with no history entry', () => {
+    const errors = checkAgainstBase(base, { metrics: { a: 1, b: 0 }, history });
+    expect(errors.join('\n')).toContain('a rose from 0 to 1');
+    expect(errors.join('\n')).toContain('b rose from new to 0');
+  });
+  it('rejects a rise whose history entry has no reason', () => {
+    const head = { metrics: { a: 1 }, history: [...history, { date: '2026-02-02', change: 'a: 0 → 1', reason: ' ' }] };
+    expect(checkAgainstBase(base, head).join('\n')).toContain('has no reason');
+  });
+  it('rejects an edited base history entry', () => {
+    const head = { metrics: { a: 0 }, history: [{ date: '2026-01-01', change: 'a: new → 0', reason: 'because' }] };
+    expect(checkAgainstBase(base, head).join('\n')).toContain('history entry 1');
+  });
+  it('rejects a dropped base history entry', () => {
+    expect(checkAgainstBase(base, { metrics: { a: 0 }, history: [] }).join('\n')).toContain('history entry 1');
   });
 });

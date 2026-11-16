@@ -20,3 +20,4 @@ reviewer who finds a new class of problem adds a line here and a check to CI.
 12. **No secrets, no third-party code.** No key, token or `.env` value committed; no script, font or tracker loaded from another site?
 13. **Pinned.** Is every new dependency an exact version, and every action a major tag?
 14. **CI green on the reviewed commit.** Are `site` and `quality` green on the exact head sha in the verdict?
+15. **Counts and guards.** Is every raised count or new allow-list entry given its reason in the baseline history, every fallen count locked in with `--update`, and does every fix come with the check that stops its whole class?

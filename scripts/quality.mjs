@@ -2,40 +2,65 @@
 //   npm run quality                              fail on a rise, or on a fall not locked in
 //   npm run quality -- --update                  lock in falls (refused while any count rose)
 //   npm run quality -- --allow-increase "<why>"  accept rises; the reason stays in the history
+//   npm run quality -- --base origin/main        fail if this branch raises a count or edits the
+//                                                baseline history it inherited from that ref
 //   npm run quality -- --print                   print the counts, change nothing
 // Hard rules, no baseline: docs at most 600 lines (CLAUDE.md 200), docs name only real paths
 // and npm scripts, components and layouts never import pages.
+// Scanned: .astro, .ts, .mjs, .js, .css, .json and .svg under src, scripts and tests, plus .svg
+// under public. SVG files are artwork: their own colours are NOT counted by the colour patterns.
+// QUALITY_SKIP_TOOLS=1 skips jscpd and knip for the CLI self-test; CI and npm run quality never set it.
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const BASELINE = 'scripts/quality-baseline.json';
 const CODE_DIRS = ['src', 'scripts', 'tests'];
-const CODE_EXT = /\.(astro|ts|mjs|css)$/;
-const SELF = ['scripts/quality.mjs', 'tests/unit/quality.test.ts'];
+const CODE_EXT = /\.(astro|ts|mjs|js|css|json|svg)$/;
+const SELF = ['scripts/quality.mjs', 'tests/unit/quality.test.ts', 'tests/unit/quality-cli.test.ts'];
+const COMMENT = String.raw`(?:\/\/[^\n]*|\/\*[\s\S]*?\*\/)`;
+const artworkOrTokens = (p) => p === 'src/styles/tokens.css' || p.endsWith('.svg');
 
 export const PATTERNS = {
-  'pattern.hex_colour_outside_tokens': { dirs: ['src'], re: /#[0-9a-fA-F]{3,8}\b/g, skip: (p) => p === 'src/styles/tokens.css' },
+  'pattern.hex_colour_outside_tokens': {
+    dirs: ['src'],
+    re: /(?<![&\w])#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})(?![\w-])/g,
+    skip: artworkOrTokens,
+    // `#add`, `#bad` and `#fee` are valid hex words too: the fragment and selector uses are skipped.
+    skipMatch: (text, i) => /(?:href="|url\(|id=")$/.test(text.slice(Math.max(0, i - 6), i)),
+  },
+  'pattern.colour_function_outside_tokens': {
+    dirs: ['src'],
+    re: /\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\(/g,
+    skip: artworkOrTokens,
+  },
   'pattern.set_html': { dirs: ['src'], re: /set:html/g },
   'pattern.console_in_src': { dirs: ['src'], re: /\bconsole\./g },
-  'pattern.swallowed_error': { dirs: CODE_DIRS, re: /=>\s*\{\s*\}|catch\s*(\([^)]*\))?\s*\{\s*\}/g },
+  'pattern.swallowed_error': {
+    dirs: CODE_DIRS,
+    re: new RegExp(String.raw`=>\s*(?:\{\s*(?:${COMMENT}\s*)?\}|undefined\b|null\b)|catch\s*(?:\([^)]*\))?\s*\{\s*(?:${COMMENT}\s*)?\}`, 'g'),
+  },
+  'pattern.risky_dom': {
+    dirs: ['src', 'scripts'],
+    re: /\.(?:innerHTML|outerHTML)\s*=|insertAdjacentHTML\(|document\.write\(|\beval\(|new Function\(/g,
+  },
   'pattern.type_escape': { dirs: CODE_DIRS, re: /:\s*any\b|\bas any\b|<any>|@ts-ignore|@ts-expect-error|@ts-nocheck|eslint-disable/g },
-  'pattern.test_skip': { dirs: ['tests'], re: /\.(skip|only)\(|\b(xit|xdescribe)\(/g },
+  'pattern.test_skip': { dirs: ['tests'], re: /\.(?:skip|skipIf|only|todo|fixme)\(|\b(?:xit|xdescribe|xtest)\(/g },
 };
 
 const lineCount = (text) => text.split('\n').length - (text.endsWith('\n') ? 1 : 0);
 const walk = (dir) => (existsSync(dir) ? readdirSync(dir, { withFileTypes: true }) : []).flatMap((e) =>
-  e.isDirectory() ? (['node_modules', 'dist', '.astro'].includes(e.name) ? [] : walk(join(dir, e.name))) : [join(dir, e.name)]);
+  e.isDirectory() ? (['node_modules', '.astro'].includes(e.name) ? [] : walk(join(dir, e.name))) : [join(dir, e.name)]);
 
 export function countPatterns(files) {
   /** @type {Record<string, number>} */
   const out = {};
-  for (const [name, { dirs, re, skip = () => false }] of Object.entries(PATTERNS)) {
+  for (const [name, { dirs, re, skip = () => false, skipMatch }] of Object.entries(PATTERNS)) {
     out[name] = files
       .filter((f) => dirs.some((d) => f.path.startsWith(`${d}/`)) && !skip(f.path) && !SELF.includes(f.path))
-      .reduce((n, f) => n + (f.text.match(re)?.length ?? 0), 0);
+      .reduce((n, f) => n + [...f.text.matchAll(re)].filter((m) => !skipMatch?.(f.text, m.index ?? 0)).length, 0);
   }
   out['size.files_over_400_lines'] = files.filter((f) => lineCount(f.text) > 400).length;
   return out;
@@ -69,6 +94,27 @@ export function compare(baseline, current) {
   return { rose, fell };
 }
 
+// A pull request may not raise its own baseline: the history it inherited stays, and every rise or
+// new metric carries a reason added in the pull request itself.
+export function checkAgainstBase(base, head) {
+  const errors = [];
+  const baseHistory = base.history ?? [];
+  const headHistory = head.history ?? [];
+  baseHistory.forEach((entry, i) => {
+    if (JSON.stringify(headHistory[i]) !== JSON.stringify(entry))
+      errors.push(`${BASELINE}: history entry ${i + 1} (${entry.change}) was changed or dropped; the base history stays`);
+  });
+  const added = headHistory.slice(baseHistory.length);
+  for (const [metric, value] of Object.entries(head.metrics ?? {})) {
+    const before = base.metrics?.[metric];
+    if (before !== undefined && value <= before) continue;
+    const entry = added.find((e) => String(e.change ?? '').startsWith(`${metric}:`));
+    if (!entry) errors.push(`${metric} rose from ${before ?? 'new'} to ${value} with no history entry added in this pull request`);
+    else if (!String(entry.reason ?? '').trim()) errors.push(`${metric} rose from ${before ?? 'new'} to ${value} and its history entry has no reason`);
+  }
+  return errors;
+}
+
 export function knipCount(report) {
   let n = report.files?.length ?? 0;
   for (const issue of report.issues ?? [])
@@ -80,7 +126,10 @@ export function knipCount(report) {
 function jscpdClones() {
   const out = mkdtempSync(join(tmpdir(), 'jscpd-'));
   try {
-    execFileSync('npx', ['--no-install', 'jscpd', '--silent', '--min-lines', '10', '--min-tokens', '70',
+    // --no-gitignore: the repo's /dist/ .gitignore rule also hides tests/dist from jscpd, and that
+    // directory holds the built-site tests. node_modules stays ignored explicitly.
+    execFileSync('npx', ['--no-install', 'jscpd', '--silent', '--no-gitignore', '--ignore', '**/node_modules/**',
+      '--min-lines', '10', '--min-tokens', '70',
       '--formats-exts', 'typescript:ts;javascript:mjs;css:css;markup:astro', '--reporters', 'json',
       '--output', out, ...CODE_DIRS.filter((d) => existsSync(d))], { stdio: 'ignore' });
     return JSON.parse(readFileSync(join(out, 'jscpd-report.json'), 'utf8')).statistics.total.clones;
@@ -98,18 +147,42 @@ function fail(messages) {
 }
 
 function main(argv) {
-  const at = argv.indexOf('--allow-increase');
-  const reason = at >= 0 ? argv[at + 1]?.trim() : undefined;
-  if (at >= 0 && !reason) fail(['--allow-increase needs a reason']);
+  const option = (name) => (argv.includes(name) ? argv[argv.indexOf(name) + 1]?.trim() : undefined);
+  const reason = option('--allow-increase');
+  if (argv.includes('--allow-increase') && !reason) fail(['--allow-increase needs a reason']);
+  const baseRef = option('--base');
+  if (argv.includes('--base') && !baseRef) fail(['--base needs a git ref']);
   const read = (path) => ({ path, text: readFileSync(path, 'utf8') });
-  const code = CODE_DIRS.flatMap(walk).filter((p) => CODE_EXT.test(p)).map(read);
+  const code = [...CODE_DIRS, 'public'].flatMap(walk).filter((p) => CODE_EXT.test(p) && (!p.startsWith('public/') || p.endsWith('.svg'))).map(read);
   const docs = [...readdirSync('.').filter((f) => f.endsWith('.md')), ...walk('docs').filter((p) => p.endsWith('.md') && !p.startsWith('docs/archive/'))].map(read);
   const scripts = Object.keys(JSON.parse(readFileSync('package.json', 'utf8')).scripts);
   const errors = hardRules({ docs, code, scripts, exists: existsSync });
-  const current = { ...countPatterns(code), 'tools.jscpd_clones': jscpdClones(), 'tools.knip_findings': knipFindings() };
+  const saved = existsSync(BASELINE) ? JSON.parse(readFileSync(BASELINE, 'utf8')) : { metrics: {}, history: [] };
+  if (baseRef) {
+    try {
+      execFileSync('git', ['rev-parse', '--verify', '--quiet', `${baseRef}^{commit}`], { stdio: 'ignore' });
+    } catch {
+      fail([`--base ${baseRef} is not a commit in this repository`]);
+    }
+    let base;
+    try {
+      base = JSON.parse(execFileSync('git', ['show', `${baseRef}:${BASELINE}`], { encoding: 'utf8' }));
+    } catch {
+      console.log(`${baseRef} has no ${BASELINE}; the base check is skipped`);
+    }
+    if (base) {
+      const baseErrors = checkAgainstBase(base, saved);
+      if (baseErrors.length) fail(baseErrors);
+    }
+  }
+  const skipTools = process.env.QUALITY_SKIP_TOOLS === '1';
+  const current = {
+    ...countPatterns(code),
+    'tools.jscpd_clones': skipTools ? 0 : jscpdClones(),
+    'tools.knip_findings': skipTools ? 0 : knipFindings(),
+  };
   if (argv.includes('--print')) return console.log(JSON.stringify(current, null, 2));
   if (errors.length) fail(errors);
-  const saved = existsSync(BASELINE) ? JSON.parse(readFileSync(BASELINE, 'utf8')) : { metrics: {}, history: [] };
   const { rose, fell } = compare(saved.metrics, current);
   if (rose.length && !reason) fail([...rose.map((r) => `rose: ${r}`), 'Fix the rise, or record why with --allow-increase "<reason>".']);
   if (fell.length && !reason && !argv.includes('--update')) fail([...fell.map((f) => `fell: ${f}`), 'Lock the fall in with --update in this commit.']);
@@ -122,4 +195,6 @@ function main(argv) {
   console.log('quality ok');
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) main(process.argv.slice(2));
+// realpathSync: node resolves a symlinked entry script to its target for import.meta.url, so a
+// plain comparison would fail open when the gate is invoked through a symlink.
+if (process.argv[1] && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href) main(process.argv.slice(2));
