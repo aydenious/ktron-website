@@ -4,11 +4,11 @@ import { t, type Lang } from '../i18n';
 interface Props { lang: Lang }
 const { lang } = Astro.props;
 ---
-<section id="area" class="area">
+<section id="area" class="area" aria-labelledby="area-title">
   <div class="wrap">
-    <h2>{t(lang, 'area.title')}</h2>
+    <h2 id="area-title">{t(lang, 'area.title')}</h2>
     <p>{t(lang, 'area.lead')}</p>
-    <ul>{AREA_KEYS.map((k) => <li>{t(lang, k)}</li>)}</ul>
+    <ul role="list">{AREA_KEYS.map((k) => <li>{t(lang, k)}</li>)}</ul>
     <p class="links">
       <a href={CONTACT.directions} target="_blank" rel="noopener">{t(lang, 'area.directions')}</a>
       <a href={CONTACT.whatsapp} target="_blank" rel="noopener">{t(lang, 'area.more')}</a>

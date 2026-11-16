@@ -5,12 +5,12 @@ import { t, type Lang } from '../i18n';
 interface Props { lang: Lang }
 const { lang } = Astro.props;
 ---
-<section id="quality" class="quality">
+<section id="quality" class="quality" aria-labelledby="quality-title">
   <div class="wrap grid">
     <Picture src={photos.quality} alt={t(lang, 'photo.quality.alt')} formats={['avif', 'webp']}
       widths={[480, 800, 1200]} sizes="(min-width: 960px) 45vw, 100vw" loading="lazy" class="photo" />
     <div>
-      <h2>{t(lang, 'quality.title')}</h2>
+      <h2 id="quality-title">{t(lang, 'quality.title')}</h2>
       <p>{t(lang, 'quality.text')}</p>
     </div>
   </div>

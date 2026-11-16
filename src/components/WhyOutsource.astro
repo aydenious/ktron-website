@@ -4,10 +4,10 @@ interface Props { lang: Lang }
 const { lang } = Astro.props;
 const points: Key[] = ['why.1', 'why.2', 'why.3', 'why.4'];
 ---
-<section id="why" class="why">
+<section id="why" class="why" aria-labelledby="why-title">
   <div class="wrap">
-    <h2>{t(lang, 'why.title')}</h2>
-    <ul>
+    <h2 id="why-title">{t(lang, 'why.title')}</h2>
+    <ul role="list">
       {points.map((k) => (
         <li>
           <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><circle class="disc" cx="12" cy="12" r="12" /><path class="tick" d="M7 12.5l3.2 3.2L17 9" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></svg>

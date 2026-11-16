@@ -43,6 +43,7 @@
   "trace.2": "每批的合格与不合格数量都有记录。",
   "trace.3": "退回的批次作为同一批次的新一轮处理来追踪。",
   "trace.4": "送货单与发票全面数字化。",
+  "trace.mock.scroll": "批次记录示例；小屏幕可左右滑动",
   "trace.mock.caption": "批次记录示例（虚构数据）",
   "trace.mock.control": "控制编号",
   "trace.mock.pass": "轮次",

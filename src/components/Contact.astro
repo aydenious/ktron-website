@@ -5,9 +5,9 @@ import { t, type Lang } from '../i18n';
 interface Props { lang: Lang }
 const { lang } = Astro.props;
 ---
-<section id="contact" class="contact">
+<section id="contact" class="contact" aria-labelledby="contact-title">
   <div class="wrap">
-    <h2>{t(lang, 'contact.title')}</h2>
+    <h2 id="contact-title">{t(lang, 'contact.title')}</h2>
     <p>{t(lang, 'contact.lead')}</p>
     <WhatsAppButton lang={lang} />
     <dl>

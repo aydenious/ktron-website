@@ -4,10 +4,10 @@ interface Props { lang: Lang }
 const { lang } = Astro.props;
 const items = ['since', 'workers', 'capacity', 'turnaround', 'area'] as const;
 ---
-<section id="numbers" class="numbers on-dark">
+<section id="numbers" class="numbers on-dark" aria-labelledby="numbers-title">
   <div class="wrap">
-    <h2>{t(lang, 'numbers.title')}</h2>
-    <ul>
+    <h2 id="numbers-title">{t(lang, 'numbers.title')}</h2>
+    <ul role="list">
       {items.map((k) => (
         <li>
           <strong>{t(lang, `numbers.${k}.value` as Key)}</strong>

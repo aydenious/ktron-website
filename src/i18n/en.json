@@ -43,6 +43,7 @@
   "trace.2": "Accepted and rejected counts are recorded for every lot.",
   "trace.3": "A returned lot is tracked as a new pass of the same lot.",
   "trace.4": "Delivery orders and invoices are digital.",
+  "trace.mock.scroll": "Example lot record; scrolls sideways on a small screen",
   "trace.mock.caption": "Example lot record (made-up data)",
   "trace.mock.control": "Control no.",
   "trace.mock.pass": "Pass",

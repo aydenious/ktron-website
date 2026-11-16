@@ -8,14 +8,14 @@ const passes = [
   { pass: 2, collected: '2026-03-09', returned: '2026-03-11', accepted: '176', rejected: '4' },
 ];
 ---
-<section id="traceability" class="trace">
+<section id="traceability" class="trace" aria-labelledby="traceability-title">
   <div class="wrap grid">
     <div>
-      <h2>{t(lang, 'trace.title')}</h2>
+      <h2 id="traceability-title">{t(lang, 'trace.title')}</h2>
       <ul>{points.map((k) => <li>{t(lang, k)}</li>)}</ul>
     </div>
     <figure>
-      <div class="card" aria-hidden="false">
+      <div class="card" tabindex="0" role="region" aria-label={t(lang, 'trace.mock.scroll')}>
         <p class="lot"><span>{t(lang, 'trace.mock.control')}</span> <strong>DEMO-0815</strong></p>
         <table>
           <thead><tr>

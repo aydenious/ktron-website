@@ -4,9 +4,9 @@ interface Props { lang: Lang }
 const { lang } = Astro.props;
 const qs = [1, 2, 3, 4].map((n) => [`faq.${n}.q`, `faq.${n}.a`] as [Key, Key]);
 ---
-<section id="faq" class="faq">
+<section id="faq" class="faq" aria-labelledby="faq-title">
   <div class="wrap">
-    <h2>{t(lang, 'faq.title')}</h2>
+    <h2 id="faq-title">{t(lang, 'faq.title')}</h2>
     {qs.map(([q, a]) => (
       <details>
         <summary>{t(lang, q)}</summary>
