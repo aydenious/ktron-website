@@ -1,0 +1,55 @@
+---
+import { t, type Key, type Lang } from '../i18n';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const points: Key[] = ['trace.1', 'trace.2', 'trace.3', 'trace.4'];
+const passes = [
+  { pass: 1, collected: '2026-03-02', returned: '2026-03-04', accepted: '4,820', rejected: '180' },
+  { pass: 2, collected: '2026-03-09', returned: '2026-03-11', accepted: '176', rejected: '4' },
+];
+---
+<section id="traceability" class="trace">
+  <div class="wrap grid">
+    <div>
+      <h2>{t(lang, 'trace.title')}</h2>
+      <ul>{points.map((k) => <li>{t(lang, k)}</li>)}</ul>
+    </div>
+    <figure>
+      <div class="card" aria-hidden="false">
+        <p class="lot"><span>{t(lang, 'trace.mock.control')}</span> <strong>DEMO-0815</strong></p>
+        <table>
+          <thead><tr>
+            <th scope="col">{t(lang, 'trace.mock.pass')}</th><th scope="col">{t(lang, 'trace.mock.collected')}</th>
+            <th scope="col">{t(lang, 'trace.mock.returned')}</th><th scope="col">{t(lang, 'trace.mock.accepted')}</th>
+            <th scope="col">{t(lang, 'trace.mock.rejected')}</th>
+          </tr></thead>
+          <tbody>{passes.map((p) => (
+            <tr><td>{p.pass}</td><td>{p.collected}</td><td>{p.returned}</td><td>{p.accepted}</td><td>{p.rejected}</td></tr>
+          ))}</tbody>
+        </table>
+        <p class="docs">
+          <span>{t(lang, 'trace.mock.do')}: <strong>DO-DEMO-12</strong></span>
+          <span>{t(lang, 'trace.mock.invoice')}: <strong>INV-DEMO-07</strong> <em>{t(lang, 'trace.mock.billed')}</em></span>
+        </p>
+      </div>
+      <figcaption>{t(lang, 'trace.mock.caption')}</figcaption>
+    </figure>
+  </div>
+</section>
+<style>
+  .trace { padding: 64px 0; }
+  .grid { display: grid; gap: 32px; align-items: center; }
+  ul { padding-left: 1.2em; display: grid; gap: 10px; }
+  li::marker { color: var(--gold); }
+  figure { margin: 0; min-width: 0; }
+  .card { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow-card);
+    padding: 20px; border-top: 6px solid var(--navy); overflow-x: auto; }
+  .lot { margin: 0 0 12px; display: flex; gap: 10px; align-items: baseline; color: var(--navy); }
+  table { border-collapse: collapse; width: 100%; font-size: 0.92rem; font-variant-numeric: tabular-nums; }
+  th, td { padding: 8px 6px; text-align: left; border-bottom: 1px solid var(--grey-1); white-space: nowrap; }
+  th { color: var(--navy-2); font-weight: 700; }
+  .docs { display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 14px 0 0; font-size: 0.92rem; }
+  em { font-style: normal; background: var(--gold-soft); color: var(--navy); padding: 2px 8px; border-radius: 999px; }
+  figcaption { font-size: 0.85rem; margin-top: 8px; color: var(--slate); }
+  @media (min-width: 960px) { .grid { grid-template-columns: 1fr 1.1fr; } }
+</style>

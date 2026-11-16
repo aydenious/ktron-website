@@ -10,7 +10,7 @@
     "pattern.test_skip": 0,
     "size.files_over_400_lines": 0,
     "tools.jscpd_clones": 0,
-    "tools.knip_findings": 4
+    "tools.knip_findings": 1
   },
   "history": [
     {

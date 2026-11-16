@@ -40,6 +40,12 @@ const TEXT: [string, string, string][] = [
   ['footer link', 'gold-soft', 'navy'],
   ['skip link', 'paper', 'navy'],
   ['gold button text', 'navy', 'gold'],
+  ['hero text', 'white', 'navy'],
+  ['body text on a white section', 'slate', 'white'],
+  ['headings on a white section', 'navy', 'white'],
+  ['link on a white section', 'navy-2', 'white'],
+  ['numbers value', 'gold', 'navy'],
+  ['numbers label', 'grey-1', 'navy'],
 ];
 const NON_TEXT: [string, string, string][] = [
   ['focus ring on the page', 'navy', 'paper'],

@@ -1,0 +1,24 @@
+---
+import { Picture } from 'astro:assets';
+import { photos } from '../assets/photos';
+import { t, type Lang } from '../i18n';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+---
+<section id="quality" class="quality">
+  <div class="wrap grid">
+    <Picture src={photos.quality} alt={t(lang, 'photo.quality.alt')} formats={['avif', 'webp']}
+      widths={[480, 800, 1200]} sizes="(min-width: 960px) 45vw, 100vw" loading="lazy" class="photo" />
+    <div>
+      <h2>{t(lang, 'quality.title')}</h2>
+      <p>{t(lang, 'quality.text')}</p>
+    </div>
+  </div>
+</section>
+<style>
+  .quality { padding: 64px 0; background: var(--white); }
+  .grid { display: grid; gap: 28px; align-items: center; }
+  .photo { border-radius: var(--radius); width: 100%; height: auto; }
+  p { font-size: 1.15rem; }
+  @media (min-width: 960px) { .grid { grid-template-columns: 1fr 1fr; } }
+</style>

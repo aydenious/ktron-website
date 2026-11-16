@@ -6,7 +6,7 @@ describe.each(['/', '/zh/'])('%s contact links', (path) => {
   const hrefs = doc.querySelectorAll('a[href]').map((a) => a.getAttribute('href')!);
   it('every WhatsApp, phone and email link is exact', () => {
     const wa = hrefs.filter((h) => /wa\.me|whatsapp/i.test(h));
-    expect(wa.length).toBeGreaterThanOrEqual(2); // contact + floating; Task 7 raises it to 3 (hero)
+    expect(wa.length).toBeGreaterThanOrEqual(3); // hero, contact, floating
     expect(new Set(wa)).toEqual(new Set(['https://wa.me/60105454173']));
     expect(new Set(hrefs.filter((h) => h.startsWith('tel:')))).toEqual(new Set(['tel:+60105454173']));
     expect(new Set(hrefs.filter((h) => h.startsWith('mailto:')))).toEqual(new Set(['mailto:sales@ktron.my']));
