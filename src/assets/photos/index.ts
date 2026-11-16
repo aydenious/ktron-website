@@ -1,0 +1,12 @@
+import type { ImageMetadata } from 'astro';
+import hero from './hero.jpg';
+import trimming from './trimming.jpg';
+import deflashing from './deflashing.jpg';
+import inspection from './inspection.jpg';
+import sorting from './sorting.jpg';
+import rework from './rework.jpg';
+import quality from './quality.jpg';
+
+export const PHOTO_IDS = ['hero', 'trimming', 'deflashing', 'inspection', 'sorting', 'rework', 'quality'] as const;
+export type PhotoId = (typeof PHOTO_IDS)[number];
+export const photos: Record<PhotoId, ImageMetadata> = { hero, trimming, deflashing, inspection, sorting, rework, quality };

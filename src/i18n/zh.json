@@ -95,6 +95,13 @@
   "contact.address": "地址",
   "footer.rights": "© 2026 Ktron Engineering Enterprise",
   "footer.credits": "图片来源",
+  "photo.hero.alt": "双手用小刀把塑料小零件从料架上切下来",
+  "photo.trimming.alt": "手工刀旁边是仍连着浇道的注塑件",
+  "photo.deflashing.alt": "仍带有浇口残留的黑色注塑件",
+  "photo.inspection.alt": "白色背景前的白色体视显微镜",
+  "photo.sorting.alt": "绿色料盒里堆放的黄色注塑零件",
+  "photo.rework.alt": "工作台上的手工刀和修整后的塑料零件",
+  "photo.quality.alt": "戴手套的手把样品放到显微镜下",
   "notfound.title": "找不到页面",
   "notfound.text": "您要找的页面不在这里。",
   "notfound.home": "返回首页"

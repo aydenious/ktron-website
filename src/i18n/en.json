@@ -95,6 +95,13 @@
   "contact.address": "Address",
   "footer.rights": "© 2026 Ktron Engineering Enterprise",
   "footer.credits": "Photo credits",
+  "photo.hero.alt": "Hands cutting a small plastic part from its frame with a knife",
+  "photo.trimming.alt": "A craft knife beside a molded part still on its runner",
+  "photo.deflashing.alt": "A molded plastic part with runner stubs still attached",
+  "photo.inspection.alt": "A white stereo microscope on a clean white background",
+  "photo.sorting.alt": "Yellow molded plastic parts heaped in a green bin",
+  "photo.rework.alt": "A hobby knife and a trimmed plastic part on a workbench",
+  "photo.quality.alt": "A gloved hand placing a sample under a microscope",
   "notfound.title": "Page not found",
   "notfound.text": "The page you asked for is not here.",
   "notfound.home": "Go to the home page"
