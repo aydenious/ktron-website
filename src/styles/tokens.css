@@ -1,0 +1,17 @@
+:root {
+  --navy: #0B2545;
+  --navy-2: #13315C;
+  --gold: #C9A227;
+  --gold-soft: #F3E7B3;
+  --paper: #FAFAF7;
+  --slate: #1F2933;
+  --whatsapp: #25D366;
+  --grey-1: #E4E7EB;
+  --grey-2: #C9D3DD;
+  --grey-3: #9AA5B1;
+  --font-latin: "Manrope Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-zh: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", "Noto Sans SC", "Source Han Sans SC";
+  --gutter: 16px;
+  --max: 1120px;
+  --radius: 12px;
+}
