@@ -101,4 +101,7 @@ export function play({ section, stage, words, paint, header, holdSnap }: PlayOpt
     const at = Math.round(st.start + (k - 1) * B);
     if (Math.abs(st.scroll() - at) > 1) scrollTo({ top: at, behavior: 'instant' });
   });
+
+  // The ambient loops (scene.css) run only while the stage is on screen.
+  new IntersectionObserver(([e]) => stage.toggleAttribute('data-playing', e.isIntersecting)).observe(stage);
 }

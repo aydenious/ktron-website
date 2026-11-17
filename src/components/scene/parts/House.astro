@@ -21,7 +21,7 @@ const curtains = `sc-curtain-${i + 1}`;
 <text class="text-house-no" x={L + 66} y="230" font-size="7">{12 + i * 2}</text>
 <path class="sc-night-1" d={`M${L - 6} 216 L${x} 176 L${L + 126} 216 V218 H${L + 120} V300 H${L} V218 H${L - 6} Z`} {...bind('wash', s, i)} />
 <g {...bind('lit', s, i)}>
-  <rect x={x0 - 10} y="220" width="66" height="56" fill="url(#scene-lit-glow)" />
+  <rect data-amb="pulse" x={x0 - 10} y="220" width="66" height="56" fill="url(#scene-lit-glow)" />
   <rect class="sc-lit" x={x0} y="230" width="46" height="36" />
   <g clip-path={`url(#scene-clip-window-${i})`}>
     <use href={`#scene-seat-${LOOKS.residents[i].id}`} x={x} />

@@ -52,7 +52,7 @@ describe.each(pages)('%s scene', (file) => {
   });
   it('draws one glow rect per house and puts no hook on it', () => {
     const svg = stills(file)[0];
-    for (const el of svg.querySelectorAll('rect[fill="url(#scene-lit-glow)"]')) expect(Object.keys(el.attributes).filter((a) => a.startsWith('data-'))).toEqual([]);
+    for (const el of svg.querySelectorAll('rect[fill="url(#scene-lit-glow)"]')) expect(Object.keys(el.attributes).filter((a) => a.startsWith('data-') && a.slice(5) in HOOKS)).toEqual([]);
     expect(svg.querySelectorAll('rect[fill="url(#scene-lit-glow)"]')).toHaveLength(4);
   });
   it('has the sky layers, the factory door and the dock crates', () => {
@@ -88,6 +88,21 @@ describe.each(pages)('%s scene', (file) => {
         expect(writes, `t ${(step + f / n).toFixed(3)}`).toBeLessThanOrEqual(60);
       }
     expect(svg.querySelectorAll('filter, mask, [filter], [mask]')).toHaveLength(0);
+  });
+  it('has no SVG filter, mask or blur anywhere on the page', () => {
+    expect(readFileSync(file, 'utf8')).not.toMatch(/<filter\b|<mask\b|feGaussianBlur|\bfilter\s*[:=]|\bmask\s*[:=]/);
+  });
+  it('keeps ambient markers and hooks on different elements (R12)', () => {
+    for (const svg of stills(file))
+      for (const el of svg.querySelectorAll('[data-amb]'))
+        expect(Object.keys(el.attributes).filter((a) => a.startsWith('data-') && a.slice(5) in HOOKS), el.toString().slice(0, 80)).toEqual([]);
+  });
+  it('marks the stars, the smoke and the four lit glows for the ambient loops, all inline in every still', () => {
+    for (const svg of stills(file)) {
+      expect(svg.querySelectorAll('[data-amb="twinkle"]')).toHaveLength(16);
+      expect(svg.querySelectorAll('[data-amb="smoke"]')).toHaveLength(3);
+      expect(svg.querySelectorAll('[data-amb="pulse"]')).toHaveLength(4);
+    }
   });
   it('stays light: the gzipped page is at most 30 KB', () => {
     expect(gzipSync(readFileSync(file)).length).toBeLessThanOrEqual(30 * 1024);

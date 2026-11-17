@@ -107,3 +107,18 @@ symbol { overflow: visible; }
 .text-qc { fill: var(--navy-2); }
 .text-house-no { fill: var(--navy-2); opacity: 0.6; }
 .text-shirt { fill: var(--gold); }
+
+/* Ambient loops (spec §3, §7; ruling R12): only the clone on the stage plays, only while it is on screen, only opacity
+   and transform move. The stills never match [data-stage]. */
+@media (prefers-reduced-motion: no-preference) {
+  [data-stage][data-playing] [data-amb='twinkle'] { animation: scene-twinkle 2.4s ease-in-out infinite alternate; }
+  [data-stage][data-playing] [data-amb='twinkle']:nth-of-type(3n + 1) { animation-delay: -0.8s; }
+  [data-stage][data-playing] [data-amb='twinkle']:nth-of-type(3n + 2) { animation-delay: -1.6s; }
+  [data-stage][data-playing] [data-amb='smoke'] { animation: scene-smoke 3.6s linear infinite; transform-box: fill-box; transform-origin: center; }
+  [data-stage][data-playing] [data-amb='smoke']:nth-of-type(2) { animation-delay: -1.2s; }
+  [data-stage][data-playing] [data-amb='smoke']:nth-of-type(3) { animation-delay: -2.4s; }
+  [data-stage][data-playing] [data-amb='pulse'] { animation: scene-pulse 3s ease-in-out infinite alternate; }
+}
+@keyframes scene-twinkle { from { opacity: 1; } to { opacity: 0.35; } }
+@keyframes scene-smoke { from { transform: translate(0, 0) scale(1); opacity: 0.7; } to { transform: translate(6px, -18px) scale(1.6); opacity: 0; } }
+@keyframes scene-pulse { from { opacity: 1; } to { opacity: 0.75; } }

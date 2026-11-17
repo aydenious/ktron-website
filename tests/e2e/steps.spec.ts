@@ -133,3 +133,14 @@ test('after a header link is clicked and the page scrolled back, a small scroll 
   await expect(page.locator('section#how[data-ready]')).toHaveCount(1);
   await stillSnaps(page);
 });
+
+test('the ambient loops run only while the stage is on screen', async ({ page }) => {
+  await page.goto('/');
+  await ready(page);
+  await expect(stage(page)).toHaveAttribute('data-playing', '');
+  const star = stage(page).locator('[data-amb="twinkle"]').first();
+  await expect.poll(() => star.evaluate((e) => getComputedStyle(e).animationName)).toBe('scene-twinkle');
+  await page.locator('#contact').scrollIntoViewIfNeeded();
+  await expect(stage(page)).not.toHaveAttribute('data-playing', '');
+  await expect(page.locator('#how ol[data-stills] [data-amb="twinkle"]').first()).toHaveCSS('animation-name', 'none');
+});
