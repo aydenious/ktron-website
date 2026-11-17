@@ -1,0 +1,126 @@
+/* Every class the "How it works" drawing uses; global, imported once by Scene.astro and Defs.astro. Colours come
+   only from --scene-* artwork tokens or the brand tokens in src/styles/tokens.css. Fills sc-*, strokes sc-stroke-*,
+   gradient stops sc-stop-*, text text-*. */
+
+.scene text, symbol[id^='scene-'] text { font-family: 'Manrope Variable', system-ui, sans-serif; text-rendering: geometricPrecision; }
+
+/* The symbols hold the still drawing; a symbol clips to its own viewport unless told not to. Only the scene's own symbols: a <use>
+   instance is styled by the rules that match the symbol where it is defined, which is outside .scene, so the
+   scope is the id prefix and not an ancestor. */
+symbol[id^='scene-'] { overflow: visible; }
+
+/* A hidden group hides everything in it, even a part that says visibility="visible" for itself (a hidden walker's arms and crate). */
+.scene [visibility='hidden'] * { visibility: hidden; }
+
+/* brand colours */
+.sc-gold { fill: var(--gold); }
+.sc-gold-soft { fill: var(--gold-soft); }
+.sc-navy { fill: var(--navy); }
+.sc-navy-2 { fill: var(--navy-2); }
+.sc-white { fill: var(--white); }
+.sc-slate { fill: var(--slate); }
+.sc-grey-1 { fill: var(--grey-1); }
+.sc-grey-2 { fill: var(--grey-2); }
+.sc-grey-3 { fill: var(--grey-3); }
+.sc-stroke-gold { stroke: var(--gold); }
+.sc-stroke-white { stroke: var(--white); }
+
+/* sky */
+.sc-sun { fill: var(--scene-sun); }
+.sc-sun-low { fill: var(--scene-sun-low); }
+.sc-night-1 { fill: var(--scene-sky-night-1); }
+.sc-stop-day-1 { stop-color: var(--scene-sky-day-1); }
+.sc-stop-day-2 { stop-color: var(--scene-sky-day-2); }
+.sc-stop-day-3 { stop-color: var(--scene-sky-day-3); }
+.sc-stop-sunset-1 { stop-color: var(--scene-sky-sunset-1); }
+.sc-stop-sunset-2 { stop-color: var(--scene-sky-sunset-2); }
+.sc-stop-sunset-3 { stop-color: var(--scene-sky-sunset-3); }
+.sc-stop-sunset-4 { stop-color: var(--scene-sky-sunset-4); }
+.sc-stop-night-1 { stop-color: var(--scene-sky-night-1); }
+.sc-stop-night-2 { stop-color: var(--navy); }
+.sc-stop-night-3 { stop-color: var(--scene-sky-night-3); }
+.sc-stop-dawn-1 { stop-color: var(--scene-sky-dawn-1); }
+.sc-stop-dawn-2 { stop-color: var(--scene-sky-dawn-2); }
+.sc-stop-dawn-3 { stop-color: var(--scene-sky-dawn-3); }
+.sc-stop-dawn-4 { stop-color: var(--scene-sky-dawn-4); }
+.sc-stop-sun { stop-color: var(--scene-sun); }
+.sc-stop-gold-soft { stop-color: var(--gold-soft); }
+.sc-stop-lit { stop-color: var(--scene-lit); }
+
+/* ground */
+.sc-hill-day { fill: var(--scene-hill-day); }
+.sc-hill-dusk { fill: var(--scene-hill-dusk); }
+.sc-hill-night { fill: var(--scene-hill-night); }
+.sc-stroke-trunk { stroke: var(--scene-trunk); }
+.sc-stroke-palm-day { stroke: var(--scene-palm-day); }
+.sc-stroke-palm-dusk { stroke: var(--scene-palm-dusk); }
+.sc-stroke-palm-night { stroke: var(--scene-palm-night); }
+.sc-verge { fill: var(--scene-verge); }
+.sc-road { fill: var(--scene-road); }
+.sc-grass { fill: var(--scene-grass); }
+
+/* factory */
+.sc-glass { fill: var(--scene-glass); }
+
+/* houses */
+.sc-wall-1 { fill: var(--scene-wall-1); }
+.sc-wall-2 { fill: var(--scene-wall-2); }
+.sc-wall-3 { fill: var(--scene-wall-3); }
+.sc-wall-4 { fill: var(--scene-wall-4); }
+.sc-curtain-1 { fill: var(--scene-curtain-1); }
+.sc-curtain-2 { fill: var(--scene-curtain-2); }
+.sc-curtain-3 { fill: var(--scene-curtain-3); }
+.sc-curtain-4 { fill: var(--scene-curtain-4); }
+.sc-roof { fill: var(--scene-roof); }
+.sc-stroke-roof-line { stroke: var(--scene-roof-line); }
+.sc-door { fill: var(--scene-door); }
+.sc-door-panel { fill: var(--scene-door-panel); }
+.sc-pot { fill: var(--scene-pot); }
+.sc-leaf { fill: var(--scene-leaf); }
+.sc-leaf-2 { fill: var(--scene-leaf-2); }
+.sc-table { fill: var(--scene-table); }
+.sc-lit { fill: var(--scene-lit); }
+
+/* people */
+.sc-ink { fill: var(--scene-ink); }
+.sc-stroke-ink { stroke: var(--scene-ink); }
+.sc-stroke-navy { stroke: var(--navy); }
+.sc-stroke-grey-3 { stroke: var(--grey-3); }
+.sc-scarf { fill: var(--scene-scarf); }
+.sc-cap-peak { fill: var(--scene-cap-peak); }
+.sc-skin-1 { fill: var(--scene-skin-1); }
+.sc-skin-2 { fill: var(--scene-skin-2); }
+.sc-skin-3 { fill: var(--scene-skin-3); }
+.sc-skin-4 { fill: var(--scene-skin-4); }
+.sc-skin-driver { fill: var(--scene-skin-driver); }
+.sc-skin-qc { fill: var(--scene-skin-qc); }
+.sc-shirt-1 { fill: var(--scene-shirt-1); }
+.sc-shirt-2 { fill: var(--scene-shirt-2); }
+.sc-shirt-3 { fill: var(--scene-shirt-3); }
+.sc-shirt-4 { fill: var(--scene-shirt-4); }
+.sc-trousers-1 { fill: var(--scene-trousers-1); }
+.sc-trousers-2 { fill: var(--scene-trousers-2); }
+.sc-trousers-3 { fill: var(--scene-trousers-3); }
+.sc-trousers-driver { fill: var(--scene-trousers-driver); }
+
+/* Text: each class names one TEXT pair in tests/unit/contrast.test.ts (the house number and shirt print are decoration). */
+.text-factory { fill: var(--white); }
+.text-van { fill: var(--navy); }
+.text-qc { fill: var(--navy-2); }
+.text-house-no { fill: var(--navy-2); opacity: 0.6; }
+.text-shirt { fill: var(--gold); }
+
+/* Ambient loops (spec §3, §7; ruling R12): only the clone on the stage plays, only while it is on screen, only opacity
+   and transform move. The stills never match [data-stage]. */
+@media (prefers-reduced-motion: no-preference) {
+  [data-stage][data-playing] [data-amb='twinkle'] { animation: scene-twinkle 2.4s ease-in-out infinite alternate; }
+  [data-stage][data-playing] [data-amb='twinkle']:nth-of-type(3n + 1) { animation-delay: -0.8s; }
+  [data-stage][data-playing] [data-amb='twinkle']:nth-of-type(3n + 2) { animation-delay: -1.6s; }
+  [data-stage][data-playing] [data-amb='smoke'] { animation: scene-smoke 3.6s linear infinite; transform-box: fill-box; transform-origin: center; }
+  [data-stage][data-playing] [data-amb='smoke']:nth-of-type(2) { animation-delay: -1.2s; }
+  [data-stage][data-playing] [data-amb='smoke']:nth-of-type(3) { animation-delay: -2.4s; }
+  [data-stage][data-playing] [data-amb='pulse'] { animation: scene-pulse 3s ease-in-out infinite alternate; }
+}
+@keyframes scene-twinkle { from { opacity: 1; } to { opacity: 0.35; } }
+@keyframes scene-smoke { from { transform: translate(0, 0) scale(1); opacity: 0.7; } to { transform: translate(6px, -18px) scale(1.6); opacity: 0; } }
+@keyframes scene-pulse { from { opacity: 1; } to { opacity: 0.75; } }

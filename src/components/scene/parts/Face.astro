@@ -1,0 +1,8 @@
+---
+// Eyes and mouth at head height `cy`: the one part of a walker that follows the direction of travel.
+interface Props { cy: number }
+const { cy } = Astro.props;
+---
+<circle class="sc-ink" cx="-2.2" cy={cy + 0.6} r="0.85" />
+<circle class="sc-ink" cx="2.2" cy={cy + 0.6} r="0.85" />
+<path class="sc-stroke-ink" d={`M-1.8 ${cy + 3} q1.8 1.4 3.6 0`} stroke-width="0.7" fill="none" stroke-linecap="round" />

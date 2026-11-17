@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { tokenValue } from '../../src/styles/token';
 import { markupOf, read, rulesOf, SOURCES, type Rule } from '../helpers/css';
@@ -51,6 +51,9 @@ const TEXT: Pair[] = [
   ['text on a paper card in a white section', 'slate', 'paper'],
   ['numbers value', 'gold', 'navy'],
   ['numbers label', 'grey-1', 'navy'],
+  ['scene: factory sign', 'white', 'navy'],
+  ['scene: van name', 'navy', 'white'],
+  ['scene: QC sign', 'navy-2', 'white'],
 ];
 const NON_TEXT: Pair[] = [
   ['focus ring on the page', 'navy', 'paper'],
@@ -86,9 +89,20 @@ const DARK_ONLY_TEXT = ['gold', 'gold-soft', 'whatsapp', 'grey-1', 'grey-2', 'gr
 // Light colours that disappear as a `fill` or `stroke` on a light background (gold and the
 // WhatsApp green stay visible, and the scene's own sky is dealt with below).
 const LIGHT_GRAPHIC = ['white', 'paper', 'grey-1', 'grey-2', 'grey-3', 'gold-soft'];
-// One drawing whose fills sit on its own sky, not on the page: day is grey-1, night is navy.
-const GRAPHIC_FILES: [file: string, reason: string][] = [
-  ['src/components/scene/Scene.astro', 'an illustration: its fills sit on its own sky (grey-1 by day, navy by night), not on the page'],
+// One drawing whose fills sit on its own sky and ground, not on the page. A folder: every file in it is artwork.
+const GRAPHIC_DIRS: [dir: string, reason: string][] = [
+  ['src/components/scene/', 'an illustration: its fills sit on its own sky and ground (day, sunset, night), not on the page'],
+];
+// The scene's text classes (scene.css `.text-…`): each draws on a sign whose pair is in TEXT.
+const SCENE_TEXT: [selector: string, pair: string][] = [
+  ['.text-factory', 'scene: factory sign'],
+  ['.text-van', 'scene: van name'],
+  ['.text-qc', 'scene: QC sign'],
+];
+// Scene text that is decoration and carries no information a reader needs (the caption and counter say it).
+const DECORATIVE_SCENE_TEXT = [
+  '.text-house-no', // the number on a house wall, a faint detail
+  '.text-shirt', // the print on the driver's shirt, a few pixels tall
 ];
 const VOID_ELEMENTS = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr']);
 
@@ -154,7 +168,7 @@ function contrastProblems(rules: Rule[], markup: (file: string) => string): stri
     // A light shape is as invisible as light text: a `fill`/`stroke` must not vanish on the page.
     for (const prop of ['fill', 'stroke'] as const) {
       const g = tokenOf(r.decl[prop]);
-      if (!g || !LIGHT_GRAPHIC.includes(g) || GRAPHIC_FILES.some(([file]) => file === r.file)) continue;
+      if (!g || !LIGHT_GRAPHIC.includes(g) || GRAPHIC_DIRS.some(([dir]) => r.file.startsWith(dir))) continue;
       if (r.selector.includes('.on-dark') || darkFile(r.file) || (bg && inTable(g, bg, NON_TEXT))) continue;
       out.push(`${where}: ${prop} ${g} would vanish on a light background`);
     }
@@ -188,10 +202,47 @@ describe('contrast (WCAG 2.2 AA)', () => {
     });
   });
 
+  describe('the scene text', () => {
+    const SCENE = 'src/components/scene/';
+    const sceneFiles = readdirSync(SCENE, { recursive: true }).map((f) => `${SCENE}${f}`).filter((f) => /\.(astro|css)$/.test(f));
+    /** Problems with the scene's text: unclassed <text>, a .text- rule outside the lists, a wrong fill, a stale entry. */
+    function textProblems(files: [file: string, source: string][], css: Rule[]): string[] {
+      const out: string[] = [];
+      for (const [file, source] of files)
+        for (const m of source.matchAll(/<text\b[^>]*>/g))
+          if ((m[0].match(/\bclass="([^"]*)"/)?.[1].split(/\s+/).filter((c) => c.startsWith('text-')) ?? []).length !== 1) out.push(`${file}: ${m[0]} needs exactly one text-… class`);
+      const rules = css.filter((r) => /^\.text-[\w-]+$/.test(r.selector));
+      const listed = [...SCENE_TEXT.map(([sel]) => sel), ...DECORATIVE_SCENE_TEXT];
+      for (const r of rules) if (!listed.includes(r.selector)) out.push(`${r.selector} is in neither SCENE_TEXT nor DECORATIVE_SCENE_TEXT`);
+      for (const sel of listed) if (!rules.some((r) => r.selector === sel)) out.push(`${sel} is listed but scene.css has no rule for it`);
+      for (const [sel, pair] of SCENE_TEXT) {
+        const want = TEXT.find(([name]) => name === pair)?.[1];
+        const got = tokenOf(rules.find((r) => r.selector === sel)?.decl.fill);
+        if (!want || got !== want) out.push(`${sel}: fill is ${got}, its pair "${pair}" says ${want}`);
+      }
+      return out;
+    }
+    const sceneCss = rulesOf(`${SCENE}scene.css`);
+    it('every <text> has one text-… class, every text-… rule is a listed pair, and each fill is that pair\'s foreground', () => {
+      expect(textProblems(sceneFiles.map((f) => [f, read(f)]), sceneCss)).toEqual([]);
+    });
+    it('the guard itself: an unclassed text, an unlisted rule, a wrong fill and a stale entry are all flagged', () => {
+      const own = (style: string) => rulesOf('scene.css', style);
+      const all = [...SCENE_TEXT.map(([sel]) => `${sel} { fill: var(--navy); }`), ...DECORATIVE_SCENE_TEXT.map((sel) => `${sel} { fill: var(--navy); }`)].join('\n');
+      expect(textProblems([['a.astro', '<text x="1">hi</text>']], sceneCss)).toHaveLength(1);
+      expect(textProblems([], [...sceneCss, ...own('.text-x { fill: var(--navy); }')])).toEqual([expect.stringContaining('.text-x')]);
+      expect(textProblems([], own(all.replace('.text-factory { fill: var(--navy)', '.text-factory { fill: var(--gold)')))).toEqual(
+        expect.arrayContaining([expect.stringContaining('.text-factory: fill is gold')]),
+      );
+      expect(textProblems([], own('.text-factory { fill: var(--white); }'))).toEqual(expect.arrayContaining([expect.stringContaining('.text-van is listed')]));
+    });
+  });
+
   it('every allow-list entry still names a rule that exists (a stale entry would excuse a future one)', () => {
     const entries = [...NAVY_WITHOUT_ON_DARK.map(([f, sel]) => [f, sel]), ...DECORATIVE_EDGE_RULES];
     const missing = entries.filter(([file, selector]) => !existsSync(file) || !rulesOf(file).some((r) => r.selector === selector));
     expect(missing).toEqual([]);
+    expect(GRAPHIC_DIRS.filter(([dir]) => !existsSync(dir))).toEqual([]);
   });
 
   describe('the guard itself', () => {
@@ -241,6 +292,7 @@ describe('contrast (WCAG 2.2 AA)', () => {
       expect(run('path { fill: var(--gold); }', 'class="x"')).toEqual([]);
       // The scene illustration paints on its own sky (documented exemption).
       expect(run('path { fill: var(--white); }', 'class="x"', 'src/components/scene/Scene.astro')).toEqual([]);
+      expect(run('path { fill: var(--white); }', 'class="x"', 'src/components/scene/scene.css')).toEqual([]);
     });
     it('covers ::marker colours: a marker needs a marker pair', () => {
       expect(run('li::marker { color: var(--navy); }', 'class="x"')).toEqual([]);

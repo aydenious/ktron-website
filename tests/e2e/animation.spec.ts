@@ -1,49 +1,15 @@
 import { gzipSync } from 'node:zlib';
 import { expect, test, type Page } from '@playwright/test';
-
-const how = (page: Page) => page.locator('section#how');
-const stage = (page: Page) => page.locator('[data-stage]');
-const still = (page: Page, n: number) => page.locator(`#how ol[data-stills] > li[data-step="${n}"]`);
-/** One page up by key, then wait until the keyboard's animated scroll has stopped (two equal reads, a frame apart). */
-async function pageUp(page: Page) {
-  await page.keyboard.press('PageUp');
-  await expect.poll(() => page.evaluate(() => new Promise<boolean>((done) => {
-    const y = scrollY;
-    requestAnimationFrame(() => requestAnimationFrame(() => done(scrollY === y)));
-  })), { timeout: 5000 }).toBe(true);
-}
-/**
- * Holds the animation script's download until release() is called. isHeld() says whether it has been asked for:
- * that happens when the scene comes near the viewport, which a deep link's scroll may or may not do (mobile
- * WebKit jumps straight to the target), so a test must bring the scene near itself rather than wait for it.
- */
-async function holdChunk(page: Page) {
-  let release!: () => void;
-  const gate = new Promise<void>((r) => { release = r; });
-  let held = false;
-  await page.route(/\/animate\.[^/]*\.js$/, async (route) => {
-    held = true;
-    await gate;
-    await route.continue();
-  });
-  return { release, isHeld: () => held };
-}
-const scrollTo = (page: Page, top: number) =>
-  page.evaluate((y) => window.scrollTo({ top: y, behavior: 'instant' }), top);
-
-/** Brings the section near, waits for the script, returns the pinned range in px. */
-async function ready(page: Page): Promise<[number, number]> {
-  await how(page).scrollIntoViewIfNeeded();
-  await expect(page.locator('section#how[data-ready]')).toHaveCount(1);
-  return how(page).evaluate((s) => [Number(s.dataset.start), Number(s.dataset.end)]);
-}
+import { holdChunk, how, pageUp, ready, scrollTo, settled, stage, state, still } from './helpers';
 
 test('the scene pins and its captions advance through all five steps', async ({ page }) => {
   await page.goto('/');
   const [start, end] = await ready(page);
   expect(end - start).toBeGreaterThan(2 * page.viewportSize()!.height);
+  const { B } = await state(page);
   for (let n = 1; n <= 5; n++) {
-    await scrollTo(page, start + ((end - start) * (n - 0.5)) / 5);
+    await scrollTo(page, start + (n - 1) * B);
+    await settled(page, n);
     const text = await still(page, n).locator('[data-caption]').textContent();
     await expect(stage(page).locator('[data-caption]')).toHaveText(text!);
     await expect(stage(page).locator('[data-counter]')).toHaveText((await still(page, n).locator('[data-counter]').textContent())!);
@@ -58,11 +24,12 @@ test('scrolling back returns to step 1', async ({ page }) => {
   await expect(stage(page).locator('[data-caption]')).toHaveText((await still(page, 5).locator('[data-caption]').textContent())!);
   await scrollTo(page, start - 200);
   await expect(stage(page).locator('[data-caption]')).toHaveText((await still(page, 1).locator('[data-caption]').textContent())!);
-  for (const hook of ['data-van', 'data-world']) {
-    const want = await still(page, 1).locator(`[${hook}]`).getAttribute('transform');
-    await expect(stage(page).locator(`[${hook}]`)).toHaveAttribute('transform', want!);
+  // The clock plays back from step 5 to the opening frame: about 5.4 s.
+  for (const hook of ['van', 'world', 'night']) {
+    const el = stage(page).locator(`[data-${hook}]`);
+    const attr = hook === 'night' ? 'opacity' : 'transform';
+    await expect(el).toHaveAttribute(attr, (await still(page, 1).locator(`[data-${hook}]`).getAttribute(attr))!, { timeout: 15000 });
   }
-  await expect(stage(page).locator('[data-night]')).toHaveAttribute('opacity', '0');
 });
 
 const sectionTop = (page: Page, id: string) => page.locator(`#${id}`).evaluate((e) => e.getBoundingClientRect().top);
@@ -283,19 +250,22 @@ test('no horizontal scroll at 320 px once the scene is built', async ({ page }) 
   }
 });
 
-test('resizing after the scene is built moves the pinned range and the captions still advance', async ({ page }) => {
+test('resizing after the scene is built moves the pinned range, keeps the committed step and the captions still advance', async ({ page }) => {
   await page.goto('/');
-  await ready(page);
-  const range = () => how(page).evaluate((s) => [Number(s.dataset.start), Number(s.dataset.end)]);
-  const before = await range();
+  const [start0] = await ready(page);
+  const before = await state(page);
+  await scrollTo(page, start0 + 2 * before.B);
+  await settled(page, 3);
   const h = page.viewportSize()!.height;
   await page.setViewportSize({ width: page.viewportSize()!.width, height: h - 200 });
-  await expect.poll(async () => (await range())[1] - (await range())[0]).not.toBe(before[1] - before[0]);
-  const [start, end] = await range();
-  await scrollTo(page, end - 10);
-  await expect(stage(page).locator('[data-caption]')).toHaveText((await still(page, 5).locator('[data-caption]').textContent())!);
-  await scrollTo(page, start + 10);
-  await expect(stage(page).locator('[data-caption]')).toHaveText((await still(page, 1).locator('[data-caption]').textContent())!);
+  await expect.poll(async () => (await state(page)).B).not.toBe(before.B);
+  await settled(page, 3); // the step stays, and the page settles on the new P_3
+  const { start, B } = await state(page);
+  for (const n of [5, 1]) {
+    await scrollTo(page, start + (n - 1) * B);
+    await settled(page, n);
+    await expect(stage(page).locator('[data-caption]')).toHaveText((await still(page, n).locator('[data-caption]').textContent())!);
+  }
 });
 
 test.describe('reduced motion', () => {

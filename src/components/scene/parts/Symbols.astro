@@ -1,0 +1,137 @@
+---
+// The still parts of the places, drawn once (spec §7 and ruling R20). Each of the five stills draws these with
+// `<use href="#scene-…">` instead of repeating them, so the page carries each shape once. Rules: no hook inside a
+// symbol, nothing a still shows differently from another, and the draw order of a part is kept by cutting the
+// part where a hook sits. House symbols are drawn around the house centre at 0 (place them with the use's x).
+// A symbol's children that name no colour take the `use`'s (fill and stroke are inherited).
+import Curtains from './Curtains.astro';
+import Bust from './Bust.astro';
+import { LOOKS } from './looks';
+const TILES = Array.from({ length: 17 }, (_, k) => -64 + k * 8);
+const TEETH = [0, 1, 2];
+const SLATS = Array.from({ length: 10 }, (_, k) => 240 + 6 * k);
+const DASHES = Array.from({ length: 20 }, (_, i) => 10 + 52 * i);
+const HILLS = 'M0 262 Q120 212 260 246 T560 236 T860 232 T1040 244 V320 H0 Z';
+const n = (v: number) => Number(v.toFixed(2));
+// [x, y, scale]: the trunk rises 90 × scale from y + 90 × scale; seven fronds fan out from (x, y).
+const PALMS = [[415, 120, 0.9], [652, 116, 1]] as const;
+const FRONDS = [[-34, 6], [-26, -14], [-6, -24], [18, -20], [32, 2], [24, 14], [-20, 16]];
+const trunk = (x: number, y: number, k: number) => `M${x - 6} ${n(y + 90 * k)} q-6 ${n(-50 * k)} 6 ${n(-90 * k)}`;
+const frond = (x: number, y: number, k: number, [dx, dy]: number[]) => `M${x} ${y} q${n(dx * k * 0.5)} ${n(-14 * k)} ${n(dx * k)} ${n(dy * k)}`;
+---
+<symbol id="scene-crate">
+  <rect class="sc-gold" width="20" height="13" rx="1.6" />
+  <rect class="sc-navy" y="5" width="20" height="2.4" opacity="0.28" />
+</symbol>
+
+<!-- ground (world coordinates); hills, trunks and fronds take their colour from the use -->
+<symbol id="scene-hills"><path d={HILLS} /></symbol>
+<symbol id="scene-trunks">
+  {PALMS.map(([x, y, k]) => <path stroke-width={n(6 * k)} d={trunk(x, y, k)} />)}
+</symbol>
+<symbol id="scene-fronds">
+  {PALMS.map(([x, y, k]) => FRONDS.map((f) => <path stroke-width={n(5 * k)} d={frond(x, y, k, f)} />))}
+</symbol>
+<symbol id="scene-road">
+  <rect class="sc-verge" y="300" width="1040" height="18" />
+  <rect class="sc-road" y="316" width="1040" height="38" />
+  {DASHES.map((x) => <rect class="sc-white" x={x} y="333" width="26" height="3" />)}
+  <rect class="sc-grey-2" y="352" width="1040" height="7" />
+  <rect class="sc-grass" y="359" width="1040" height="41" />
+</symbol>
+
+<!-- factory, x 20–230 (world coordinates), up to the roller door -->
+<symbol id="scene-factory">
+  <rect class="sc-grey-3" x="195" y="136" width="16" height="66" />
+  <rect class="sc-gold" x="195" y="146" width="16" height="6" />
+  {TEETH.map((k) => (
+    <>
+      <path class="sc-navy-2" d={`M${20 + 70 * k} 200 V168 L${90 + 70 * k} 200 Z`} />
+      <rect class="sc-glass" x={20 + 70 * k} y="168" width="7" height="32" />
+    </>
+  ))}
+  <rect class="sc-grey-1" x="20" y="200" width="210" height="100" />
+  <rect class="sc-navy" x="20" y="200" width="210" height="22" />
+  {TEETH.map((k) => (
+    <>
+      <rect class="sc-glass" x={32 + 30 * k} y="234" width="22" height="18" />
+      <rect class="sc-white" x={42 + 30 * k} y="234" width="1.5" height="18" />
+    </>
+  ))}
+  <rect class="sc-slate" x="140" y="236" width="72" height="64" />
+  <rect class="sc-grey-2" x="140" y="236" width="72" height="14" />
+</symbol>
+<symbol id="scene-roller">
+  <rect class="sc-grey-2" x="140" y="236" width="72" height="64" />
+  {SLATS.map((y) => <rect class="sc-grey-3" x="142" y={y} width="68" height="1.2" />)}
+</symbol>
+
+<!-- a terrace house around its centre: walls to the door, the door, the pot and plinth, the curtains -->
+<symbol id="scene-house-a">
+  <path class="sc-roof" d="M-66 216 L0 176 L66 216 Z" />
+  {TILES.map((tx) => <path class="sc-stroke-roof-line" d={`M${tx} 214 L0 178`} stroke-width="0.8" opacity="0.35" />)}
+  <rect class="sc-white" x="-66" y="214" width="132" height="4" />
+  <path class="sc-navy-2" d="M-2 250 H38 L42 256 H-6 Z" />
+  <rect class="sc-white" x="-52" y="228" width="50" height="40" />
+  <rect class="sc-glass" x="-50" y="230" width="46" height="36" />
+  <rect class="sc-slate" x="4" y="256" width="26" height="44" />
+</symbol>
+<symbol id="scene-door">
+  <rect class="sc-door" x="4" y="256" width="26" height="44" />
+  <rect class="sc-door-panel" x="8" y="261" width="18" height="15" rx="1" />
+  <circle class="sc-gold" cx="25" cy="279" r="1.6" />
+</symbol>
+<symbol id="scene-house-b">
+  <rect class="sc-pot" x="26" y="284" width="16" height="16" rx="2" />
+  <circle class="sc-leaf" cx="30" cy="280" r="7" />
+  <circle class="sc-leaf-2" cx="38" cy="278" r="8" />
+  <rect class="sc-white" x="-60" y="292" width="120" height="8" opacity="0.55" />
+</symbol>
+<symbol id="scene-curtains"><Curtains x0={-50} /></symbol>
+{LOOKS.residents.map((look) => (
+  <symbol id={`scene-seat-${look.id}`}>
+    <Bust look={look} x={-27} y={259} scale={0.9} />
+    <rect class="sc-table" x="-50" y="257" width="46" height="3" />
+    <circle class="sc-slate" cx="-33" cy="256" r="1.6" />
+    <circle class="sc-slate" cx="-29" cy="256.2" r="1.4" />
+  </symbol>
+))}
+
+<!-- inspection house (world coordinates): the shell, and the room behind the window -->
+<symbol id="scene-inspect-shell">
+  <rect class="sc-white" x="815" y="206" width="130" height="94" />
+  <rect class="sc-navy" x="808" y="198" width="144" height="10" />
+  <rect class="sc-navy-2" x="908" y="256" width="26" height="44" />
+</symbol>
+<symbol id="scene-inspect-room">
+  <rect class="sc-glass" x="826" y="228" width="72" height="44" />
+  <Bust look={LOOKS.qc} x={850} y={261} scale={1.05} />
+  <rect class="sc-table" x="826" y="258" width="72" height="4" />
+  <rect class="sc-navy" x="866" y="254" width="14" height="4" rx="1" />
+  <path class="sc-stroke-navy" d="M873 254 v-10" stroke-width="2.6" />
+  <path class="sc-stroke-navy" d="M869 242 l8 -6" stroke-width="4" stroke-linecap="round" />
+  <rect class="sc-grey-2" x="871" y="244" width="5" height="3" />
+  <path class="sc-stroke-white" d="M856 248 L866 244" stroke-width="3.6" stroke-linecap="round" />
+  <use href="#scene-crate" x="884" y="245" />
+</symbol>
+
+<!-- van (around the middle of the body, wheels on y 0) -->
+<symbol id="scene-van-body">
+  <ellipse class="sc-ink" cx="10" cy="2" rx="52" ry="4" opacity="0.18" />
+  <rect class="sc-white" x="-40" y="-54" width="70" height="46" rx="5" />
+  <path class="sc-white" d="M30 -42 H46 L58 -24 V-8 H30 Z" />
+  <path class="sc-navy-2" d="M34 -38 H45 L53 -25 H34 Z" />
+  <rect class="sc-navy" x="-40" y="-22" width="98" height="4" />
+  <rect class="sc-gold" x="-40" y="-18" width="98" height="2" />
+  <rect class="sc-grey-1" x="54" y="-16" width="5" height="4" rx="1" />
+  <rect class="sc-grey-3" x="-40" y="-56" width="70" height="3" rx="1.5" />
+</symbol>
+<symbol id="scene-wheel">
+  <circle class="sc-slate" r="9" />
+  <circle class="sc-grey-2" r="3.6" />
+  <rect class="sc-slate" x="-0.6" y="-3.6" width="1.2" height="2.4" />
+</symbol>
+<symbol id="scene-rack-crate">
+  <rect class="sc-gold" width="14" height="12" rx="1.5" />
+  <rect class="sc-navy" y="5" width="14" height="2" opacity="0.3" />
+</symbol>

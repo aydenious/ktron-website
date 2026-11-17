@@ -1,32 +1,11 @@
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { refreshWhenFontsSettle } from './fonts';
-import { STEPS, stateAt, stepOf, view, type SceneState } from './steps';
+import { painter } from './paint';
+import { play } from './play';
+import { stateAt } from './steps';
 
 gsap.registerPlugin(ScrollTrigger);
-
-/** Returns a function that paints one moment of the scene into a drawing made by Scene.astro. */
-function painter(svg: SVGSVGElement): (s: SceneState) => void {
-  const one = (hook: string) => svg.querySelector(`[data-${hook}]`)!;
-  const indexed = (hook: string) =>
-    [...svg.querySelectorAll(`[data-${hook}]`)].map((el) => [el, Number(el.getAttribute(`data-${hook}`))] as const);
-  const world = one('world'), van = one('van'), body = one('van-body');
-  const sun = one('sun'), night = one('night'), lens = one('lens');
-  const dark = [one('stars'), ...svg.querySelectorAll('[data-lit]')];
-  const houseCrates = indexed('house-crate'), vanCrates = indexed('van-crate'), factoryCrates = indexed('factory-crate');
-  return (s) => {
-    world.setAttribute('transform', view.world(s));
-    van.setAttribute('transform', view.van(s));
-    body.setAttribute('transform', view.vanBody(s));
-    sun.setAttribute('opacity', String(view.sun(s)));
-    night.setAttribute('opacity', String(view.night(s)));
-    lens.setAttribute('opacity', String(view.lens(s)));
-    for (const el of dark) el.setAttribute('opacity', String(view.dark(s)));
-    for (const [el, i] of houseCrates) el.setAttribute('visibility', view.houseCrate(s, i));
-    for (const [el, j] of vanCrates) el.setAttribute('visibility', view.vanCrate(s, j));
-    for (const [el, j] of factoryCrates) el.setAttribute('visibility', view.factoryCrate(s, j));
-  };
-}
 
 /** How the reader got here, decided by the loader before the script was fetched. */
 interface Arrival {
@@ -40,7 +19,7 @@ interface Arrival {
   whenOver: (done: () => void) => void;
 }
 
-/** Turns the five stills of section#how into one pinned scene scrubbed by scrolling. */
+/** Turns the five stills of section#how into one pinned scene: each scroll gesture starts a step and the step plays to its end. */
 export function setup(section: HTMLElement, arrival: Arrival): void {
   const list = section.querySelector<HTMLElement>('ol[data-stills]')!;
   const stills = [...list.querySelectorAll('li[data-step]')];
@@ -71,46 +50,37 @@ export function setup(section: HTMLElement, arrival: Arrival): void {
   const stage = document.createElement('div');
   stage.className = 'stage';
   stage.dataset.stage = '';
-  stage.dataset.step = '1';
   stage.setAttribute('aria-hidden', 'true');
   stage.append(stills[0].querySelector('figure')!.cloneNode(true));
   list.after(stage);
   list.classList.add('visually-hidden');
 
   const paint = painter(stage.querySelector<SVGSVGElement>('svg.scene')!);
-  const counter = stage.querySelector('[data-counter]')!;
-  const caption = stage.querySelector('[data-caption]')!;
-  const render = (t: number) => {
-    paint(stateAt(t));
-    const n = stepOf(t);
-    if (String(n) !== stage.dataset.step) {
-      stage.dataset.step = String(n);
-      counter.textContent = words[n - 1].counter;
-      caption.textContent = words[n - 1].caption;
-    }
-  };
-
   const header = () => document.querySelector<HTMLElement>('.site-header')?.offsetHeight ?? 0;
-  const screens = () => (matchMedia('(min-width: 768px)').matches ? 4 : 3);
-  const clock = { t: 0 };
-  gsap.to(clock, {
-    t: STEPS,
-    ease: 'none',
-    onUpdate: () => render(clock.t),
-    scrollTrigger: {
-      trigger: stage,
-      pin: true,
-      start: () => `top ${header()}px`,
-      end: () => `+=${Math.round(innerHeight * screens())}`,
-      scrub: 0.4,
-      invalidateOnRefresh: true,
-      onRefresh: (st) => {
-        section.dataset.start = String(Math.round(st.start));
-        section.dataset.end = String(Math.round(st.end));
-      },
-    },
+  // A clicked link (hero, header) scrolls the page on its own, maybe through the scene: the snap waits until that
+  // scroll has landed on its target, or the reader takes over. The loader's own record of the click goes once
+  // setup has run, so this keeps its own.
+  let target: Element | null = arrival.linkTarget();
+  const landed = (el: Element) => {
+    const margin = parseFloat(getComputedStyle(el).scrollMarginTop) || 0;
+    return Math.abs(el.getBoundingClientRect().top - margin) <= 4 || scrollY >= root.scrollHeight - innerHeight - 1;
+  };
+  const check = () => { if (target && landed(target)) target = null; };
+  for (const type of ['wheel', 'touchstart', 'keydown', 'pointerdown']) addEventListener(type, () => { target = null; }, { passive: true });
+  addEventListener('scroll', check, { passive: true });
+  // A scroll that ends outside the pin is over (it landed, or something stopped it): nothing to wait for.
+  addEventListener('scrollend', () => {
+    if (scrollY < Number(section.dataset.start) || scrollY > Number(section.dataset.end)) target = null;
   });
+  addEventListener('click', (e) => {
+    const id = (e.target as Element).closest?.('a[href^="#"]')?.getAttribute('href')?.slice(1);
+    target = (id && document.getElementById(id)) || null;
+    check();
+  }, true);
+  const holdSnap = () => !!target;
+  play({ section, stage, words, paint: (t) => paint(stateAt(t)), header, holdSnap });
   ScrollTrigger.refresh();
+  check();
   refreshWhenFontsSettle(document.fonts, () => ScrollTrigger.refresh());
 
   if (readerIsBelow) {
@@ -125,10 +95,12 @@ export function setup(section: HTMLElement, arrival: Arrival): void {
     addEventListener('scrollend', settle);
     arrival.whenOver(() => removeEventListener('scrollend', settle));
   }
-  if (reaim) linkTarget.scrollIntoView({ behavior: 'smooth', block: 'start' });
   requestAnimationFrame(() => {
     root.style.removeProperty('overflow-anchor');
     root.style.removeProperty('scroll-behavior');
+    // The growth above aborted the link's own scroll, and a scroll started while the two styles were still set dies
+    // within a frame (a scrollend there lands short), so the link is followed again only now, one frame later.
+    if (reaim) requestAnimationFrame(() => linkTarget.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   });
   section.dataset.ready = '';
 }

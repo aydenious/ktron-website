@@ -1,0 +1,22 @@
+---
+// A person seated at a table, seen through a window: torso and head, hands on the table (mockup `bust`). Static.
+import Face from './Face.astro';
+import Head from './Head.astro';
+import type { Look } from './looks';
+import Torso from './Torso.astro';
+interface Props { look: Look; x: number; y: number; scale: number }
+const { look, x, y, scale } = Astro.props;
+// An arm from the shoulder to the table, as a round-ended bar tilted about its middle.
+const ARMS = [{ side: -1, turn: 29.1 }, { side: 1, turn: -29.1 }] as const;
+---
+<g transform={`translate(${x} ${y}) scale(${scale})`}>
+  <g transform="translate(0 17)"><Torso look={look} /></g>
+  {ARMS.map(({ side, turn }) => (
+    <>
+      <rect class={look.shirt} x="-2" y="-7.15" width="4" height="14.3" rx="2" transform={`translate(${side * 11.5} -7.5) rotate(${turn})`} />
+      <circle class={look.skin} cx={side * 13} cy="-2" r="2.1" />
+    </>
+  ))}
+  <Head look={look} cy={-23} />
+  <Face cy={-23} />
+</g>

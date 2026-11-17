@@ -1,0 +1,17 @@
+---
+// Hills, palms and the road, in world coordinates. Each hill and palm set is drawn three times (day, dusk,
+// night); the warm and dark copies fade in over the day one. The shapes are symbols (Symbols.astro).
+import { bind } from '../view';
+import type { SceneState } from '../steps';
+interface Props { s: SceneState }
+const { s } = Astro.props;
+const TONES = [['day', null], ['dusk', 'dusk'], ['night', 'dark']] as const;
+---
+{TONES.map(([tone, hook]) => <use href="#scene-hills" class={`sc-hill-${tone}`} {...(hook ? bind(hook, s, 0) : {})} />)}
+{TONES.map(([tone, hook]) => (
+  <g fill="none" stroke-linecap="round" {...(hook ? bind(hook, s, 1) : {})}>
+    <use href="#scene-trunks" class="sc-stroke-trunk" />
+    <use href="#scene-fronds" class={`sc-stroke-palm-${tone}`} />
+  </g>
+))}
+<use href="#scene-road" />

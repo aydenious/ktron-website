@@ -1,0 +1,32 @@
+---
+// The delivery van (mockup `van`), its wheels on the road at y 0. The body flips with the direction of travel; the
+// name and the rack crates do not (text is never mirrored), so `van-load` keeps them over the middle of the box.
+import type { SceneState } from '../steps';
+import { bind } from '../view';
+interface Props { s: SceneState }
+const { s } = Astro.props;
+const WHEELS = [-22, 42];
+const RACK = [0, 1, 2, 3];
+---
+<g {...bind('van', s)}>
+  <g {...bind('van-body', s)}>
+    <use href="#scene-van-body" />
+    {WHEELS.map((x, k) => (
+      <g transform={`translate(${x} -6)`}>
+        <g {...bind('wheel', s, k)}>
+          <use href="#scene-wheel" />
+        </g>
+      </g>
+    ))}
+    <path class="sc-night-1" d="M-40 -54 H30 V-42 H46 L58 -24 V-8 H-40 Z" {...bind('wash', s, 6)} />
+    <path d="M58 -18 L130 -30 L130 2 Z" fill="url(#scene-headlight)" {...bind('headlight', s)} />
+  </g>
+  <g {...bind('van-load', s)}>
+    {RACK.map((k) => (
+      <g {...bind('van-crate', s, k)}>
+        <use href="#scene-rack-crate" x={-36 + 16 * k} y="-66" />
+      </g>
+    ))}
+    <text class="text-van" x="-5" y="-30" text-anchor="middle" font-size="14" font-weight="800">KTRON</text>
+  </g>
+</g>

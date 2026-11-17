@@ -1,0 +1,31 @@
+---
+// One terrace house (mockup `house`): walls, roof, window, door, the night wash, and the lit window that
+// shows its resident working at a table. The lit group comes after the wash, so a lit window is never dimmed.
+// Everything a hook never changes is a symbol around the house centre (Symbols.astro), placed with the use's x.
+import { HOUSE_X } from '../layout';
+import type { SceneState } from '../steps';
+import { bind } from '../view';
+import { LOOKS } from './looks';
+interface Props { i: 0 | 1 | 2 | 3; s: SceneState }
+const { i, s } = Astro.props;
+const x = HOUSE_X[i];
+const L = x - 60;
+const x0 = x - 50; // the window's left edge
+const curtains = `sc-curtain-${i + 1}`;
+---
+<rect class={`sc-wall-${i + 1}`} x={L} y="212" width="120" height="88" />
+<use href="#scene-house-a" x={x} />
+<use href="#scene-curtains" class={curtains} x={x} />
+<g {...bind('house-door', s, i)}><use href="#scene-door" x={x} /></g>
+<use href="#scene-house-b" x={x} />
+<text class="text-house-no" x={L + 66} y="230" font-size="7">{12 + i * 2}</text>
+<path class="sc-night-1" d={`M${L - 6} 216 L${x} 176 L${L + 126} 216 V218 H${L + 120} V300 H${L} V218 H${L - 6} Z`} {...bind('wash', s, i)} />
+<g {...bind('lit', s, i)}>
+  <rect data-amb="pulse" x={x0 - 10} y="220" width="66" height="56" fill="url(#scene-lit-glow)" />
+  <rect class="sc-lit" x={x0} y="230" width="46" height="36" />
+  <g clip-path={`url(#scene-clip-window-${i})`}>
+    <use href={`#scene-seat-${LOOKS.residents[i].id}`} x={x} />
+    <rect class="sc-gold" x={x - 24} y="253" width="9" height="4.5" rx="0.8" {...bind('house-crate', s, i)} />
+  </g>
+  <use href="#scene-curtains" class={curtains} x={x} />
+</g>

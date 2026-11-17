@@ -1,0 +1,23 @@
+---
+// The factory, x 20–230: the dock the van loads from, the crates stacked on it and the roller door. The building is
+// a symbol (Symbols.astro); the smoke, the sign, the door and the crates are drawn here.
+import { DOCK_SLOTS } from '../layout';
+import { bind } from '../view';
+import type { SceneState } from '../steps';
+import { t, type Lang } from '../../../i18n';
+interface Props { s: SceneState; lang: Lang }
+const { s, lang } = Astro.props;
+// The column leans right but stays left of the camera's far edge: each puff, grown 1.6× and drifted 6 (scene.css), ends below 240.
+const SMOKE = [[203, 128, 8, 0.8], [205, 110, 11, 0.6], [207, 90, 15, 0.4]];
+---
+{SMOKE.map(([cx, cy, r, op]) => <circle class="sc-white" data-amb="smoke" cx={cx} cy={cy} r={r} opacity={op} />)}
+<use href="#scene-factory" />
+<text class="text-factory" x="125" y="216" text-anchor="middle" font-size="13" font-weight="800">{t(lang, 'scene.factory')}</text>
+<g {...bind('factory-door', s)}><use href="#scene-roller" /></g>
+<rect class="sc-grey-3" x="130" y="294" width="94" height="8" />
+{DOCK_SLOTS.map(([x, y], k) => (
+  <g {...bind('dock-crate', s, k)}>
+    <use href="#scene-crate" x={x} y={y} />
+  </g>
+))}
+<path class="sc-night-1" d="M20 200 V168 L90 200 V168 L160 200 V168 L230 200 V300 H20 Z M195 136 h16 v56 h-16 Z" {...bind('wash', s, 4)} />

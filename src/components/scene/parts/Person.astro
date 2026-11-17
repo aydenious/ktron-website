@@ -1,0 +1,33 @@
+---
+// A walking person, feet at y 0, drawn at 1.35 times the mockup's size (ruling R17). Every part with a hook
+// is a group of its own: the legs swing about the hips, the arms and the crate swap, the eyes follow the walk.
+// What a hook never changes is a symbol (PersonSymbols.astro, Symbols.astro) that the group draws with `use`.
+import type { Look } from './looks';
+import type { SceneState } from '../steps';
+import { bind, type Hook } from '../view';
+interface Props { who: 'driver' | 'resident'; i?: number; look: Look; s: SceneState }
+const { who, i = 0, look, s } = Astro.props;
+type Part = 'show' | 'face' | 'crate' | 'arms' | 'leg-a' | 'leg-b';
+const h = (part: Part) => bind(`${who}-${part}` satisfies Hook, s, i);
+const LEGS = [{ part: 'leg-a', dx: -3.4 }, { part: 'leg-b', dx: 3.4 }] as const;
+const id = look.id;
+---
+<g {...bind(who, s, i)}>
+  <g {...h('show')}>
+    <g transform="scale(1.35)">
+      {LEGS.map(({ part, dx }) => (
+        <g transform={`translate(${dx} -16)`}>
+          <g {...h(part)}><use href="#scene-leg" class={look.trousers} /></g>
+        </g>
+      ))}
+      <use href={`#scene-torso-${id}`} />
+      <g {...h('arms')}><use href={`#scene-arms-${id}`} /></g>
+      <g {...h('crate')}>
+        <use href="#scene-crate" x="-10" y="-25" />
+        <use href={`#scene-carry-${id}`} />
+      </g>
+      <use href={`#scene-head-${id}`} />
+      <g {...h('face')}><use href="#scene-face" /></g>
+    </g>
+  </g>
+</g>

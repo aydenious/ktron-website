@@ -1,87 +1,120 @@
-// The "How it works" scene as data: stateAt(t) for t in step units 0–5. The server drawing
-// (Scene.astro) and the animation (animate.ts, Task 10) both read attributes from `view`.
+// The "How it works" scene as data: stateAt(t) for t in step units 0–5. The server drawing (Scene.astro and
+// parts/) and the browser painter (paint.ts) both read attributes from `view`, so the stills and the animation
+// match by construction. Spec: docs/plans/2026-11-17-how-it-works-animation-design.md.
+import { KERB_PATH, STEPS } from './layout';
+import * as T from './timeline';
 
-export const WORLD_W = 1040;
-export const VIEW_W = 800;
-export const VIEW_H = 400;
-export const ROAD_Y = 332;
-export const FACTORY_X = 150;
-export const HOUSE_X = [330, 450, 570, 690] as const;
-export const INSPECT_X = 880;
-export const STEPS = 5;
+export * from './layout';
+
+export interface Walker {
+  /** World x of the feet. */
+  x: number;
+  shown: boolean;
+  carrying: boolean;
+  /** Leg swing in degrees; 0 while standing. */
+  stride: number;
+  /** 1 walking right, −1 walking left, 0 facing the viewer. */
+  facing: -1 | 0 | 1;
+}
+
+export interface Resident {
+  /** 0 in the doorway … 1 at the kerb. */
+  out: number;
+  /** The front door: 0 shut … 1 open. */
+  door: number;
+  carrying: boolean;
+  stride: number;
+  facing: -1 | 0 | 1;
+}
 
 export interface SceneState {
   vanX: number;
   facing: 1 | -1;
-  night: number;
   vanCrates: number;
+  /** Wheel turn in degrees, from the distance driven. */
+  wheel: number;
+  headlights: number;
+  sunset: number;
+  night: number;
+  dawn: number;
+  /** The sun's centre in view coordinates (the sky does not scroll with the world). */
+  sunX: number;
+  sunY: number;
+  moon: number;
+  /** The factory's roller door: 0 shut … 1 open. */
+  door: number;
+  dockCrates: number;
+  driver: Walker;
+  residents: Resident[];
   houseCrates: boolean[];
-  lens: boolean;
-  factoryCrates: number;
+  /** Each house window's light, 0 … 1. */
+  lit: number[];
+  qcGlow: number;
+  lens: number;
+  tick: number;
 }
 
-interface Frame { t: number; x: number; night: number; facing: 1 | -1; van: number; houses: number; lens: boolean; done: number }
-const F = (t: number, x: number, facing: 1 | -1, van: number, houses: number, opts: Partial<Frame> = {}): Frame =>
-  ({ t, x, facing, van, houses, night: 0, lens: false, done: 0, ...opts });
+const r = (n: number, d = 1) => Number(n.toFixed(d)) || 0; // `|| 0` turns −0 into 0
+const HOUSES = [0, 1, 2, 3] as const;
 
-// `houses` = how many houses, counted from the first, hold a crate.
-const FRAMES: Frame[] = [
-  // 1: loaded van leaves the factory
-  F(0, FACTORY_X, 1, 4, 0), F(0.3, FACTORY_X, 1, 4, 0),
-  // 2: stop at each house in turn, drop a crate
-  ...HOUSE_X.flatMap((x, i) => [F(1 + i * 0.25, x, 1, 4 - i, i), F(1.1 + i * 0.25, x, 1, 3 - i, i + 1)]),
-  // 3: night, morning, then collect from the last house back to the first
-  F(2, HOUSE_X[3], 1, 0, 4), F(2.25, HOUSE_X[3], 1, 0, 4, { night: 1 }),
-  // (the first collect frame, t 2.5 at the last house, is also where morning arrives)
-  ...[3, 2, 1, 0].flatMap((i, k) => [F(2.5 + k * 0.125, HOUSE_X[i], -1, k, i + 1), F(2.56 + k * 0.125, HOUSE_X[i], -1, k + 1, i)]),
-  // 4: drive to the inspection house, the lens glows
-  F(3, HOUSE_X[0], -1, 4, 0), F(3.05, HOUSE_X[0], 1, 4, 0), F(3.75, INSPECT_X, 1, 4, 0),
-  F(3.85, INSPECT_X, 1, 4, 0, { lens: true }),
-  // 5: back to the factory, unload
-  F(4.05, INSPECT_X, -1, 4, 0), F(4.8, FACTORY_X, -1, 4, 0), F(4.9, FACTORY_X, -1, 0, 0, { done: 4 }),
-  F(5, FACTORY_X, -1, 0, 0, { done: 4 }),
-];
+/** The van's fastest moment, in world units per step: smoothstep peaks at 1.5× a segment's average speed. */
+export const MAX_SPEED = Math.max(
+  ...T.VAN_X.slice(1).map(([t, x], i) => (t > T.VAN_X[i][0] ? (1.5 * Math.abs(x - T.VAN_X[i][1])) / (t - T.VAN_X[i][0]) : 0)),
+);
 
-/** The fastest the van ever drives, in world units per step (the quickest hop between two frames). */
-export const MAX_SPEED = Math.max(...FRAMES.slice(1).map((b, i) => Math.abs(b.x - FRAMES[i].x) / (b.t - FRAMES[i].t)));
-
-const r = (n: number, d = 1) => Number(n.toFixed(d));
-const lerp = (a: number, b: number, k: number) => a + (b - a) * k;
+/** The way a walker last moved at or before t (0 before any move). */
+function lastHeading(keys: readonly T.Key[], t: number): -1 | 0 | 1 {
+  let h: -1 | 0 | 1 = 0;
+  for (let i = 1; i < keys.length && keys[i - 1][0] <= t; i++) {
+    const d = Math.sign(keys[i][1] - keys[i - 1][1]) as -1 | 0 | 1;
+    if (d !== 0 && keys[i][0] > keys[i - 1][0]) h = d;
+  }
+  return h;
+}
 
 export function stateAt(t: number): SceneState {
   const c = Math.min(Math.max(t, 0), STEPS);
-  let i = 0;
-  while (i < FRAMES.length - 2 && FRAMES[i + 1].t <= c) i++;
-  const a = FRAMES[i];
-  const b = FRAMES[i + 1];
-  const k = Math.min(1, (c - a.t) / (b.t - a.t));
+  const tr = (keys: readonly T.Key[], d = 3) => r(T.track(keys, c), d);
   return {
-    vanX: r(lerp(a.x, b.x, k)),
-    facing: a.facing,
-    night: r(lerp(a.night, b.night, k), 3),
-    vanCrates: a.van,
-    houseCrates: HOUSE_X.map((_, h) => h < a.houses),
-    lens: a.lens,
-    factoryCrates: a.done,
+    vanX: tr(T.VAN_X, 1),
+    facing: T.held(T.VAN_FACING, c) as 1 | -1,
+    vanCrates: T.holding('van', c),
+    wheel: r(((T.distance(T.VAN_X, c) / 9) * (180 / Math.PI)) % 360, 1),
+    headlights: tr(T.HEADLIGHTS),
+    sunset: tr(T.SUNSET),
+    night: tr(T.NIGHT),
+    dawn: tr(T.DAWN),
+    sunX: tr(T.SUN_X, 1),
+    sunY: tr(T.SUN_Y, 1),
+    moon: tr(T.MOON),
+    door: tr(T.FACTORY_DOOR),
+    dockCrates: T.holding('dock', c),
+    driver: {
+      x: tr(T.DRIVER_X, 1),
+      shown: T.held(T.DRIVER_SHOWN, c) === 1,
+      carrying: T.holding('driver', c) > 0,
+      stride: r(T.stride(T.DRIVER_X, c), 1),
+      facing: c >= T.DRIVER_FACES_VIEWER ? 0 : T.heading(T.DRIVER_X, c) || lastHeading(T.DRIVER_X, c),
+    },
+    residents: HOUSES.map((i) => ({
+      out: tr(T.RESIDENT_OUT[i]),
+      door: tr(T.HOUSE_DOOR[i]),
+      carrying: T.holding(`resident-${i}`, c) > 0,
+      stride: r(T.stride(T.RESIDENT_OUT[i], c, KERB_PATH), 1),
+      facing: T.heading(T.RESIDENT_OUT[i], c),
+    })),
+    houseCrates: HOUSES.map((i) => T.holding(`house-${i}`, c) > 0),
+    lit: HOUSES.map((i) => tr(T.LIT[i])),
+    qcGlow: tr(T.QC_GLOW),
+    lens: tr(T.LENS),
+    tick: tr(T.TICK),
   };
 }
 
 export const stepOf = (t: number) => Math.min(STEPS, Math.floor(t) + 1) as 1 | 2 | 3 | 4 | 5;
-export const camera = (vanX: number) => Math.min(Math.max(vanX - VIEW_W / 2, 0), WORLD_W - VIEW_W);
 
-/** One still per step: departure, crates delivered, night, inspection, return. */
-export const STILLS: SceneState[] = [0, 2, 2.25, 4, 5].map(stateAt);
+/** One still per step, each the step's defining moment (spec §6). */
+export const STILL_T = [0.55, 2, 2.25, 4, 5] as const;
+export const STILLS: SceneState[] = STILL_T.map(stateAt);
 
-const shown = (on: boolean) => (on ? 'visible' : 'hidden');
-export const view = {
-  world: (s: SceneState) => `translate(${-r(camera(s.vanX))} 0)`,
-  van: (s: SceneState) => `translate(${r(s.vanX)} ${ROAD_Y})`,
-  vanBody: (s: SceneState) => `scale(${s.facing} 1)`,
-  night: (s: SceneState) => r(s.night * 0.85, 2),
-  dark: (s: SceneState) => r(s.night, 2),
-  sun: (s: SceneState) => r(1 - s.night, 2),
-  lens: (s: SceneState) => (s.lens ? 1 : 0),
-  houseCrate: (s: SceneState, i: number) => shown(s.houseCrates[i]),
-  vanCrate: (s: SceneState, j: number) => shown(j < s.vanCrates),
-  factoryCrate: (s: SceneState, j: number) => shown(j < s.factoryCrates),
-};
+export { view } from './view';
