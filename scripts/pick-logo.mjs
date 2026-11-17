@@ -1,6 +1,6 @@
 // Turns one logo concept into the final brand files, then rebuilds the favicon set.
 //   npm run brand:pick a      (or b, c, d)
-// The pick is recorded in src/brand/pick.json, which the brand page and the tests read.
+// The pick is recorded in src/brand/pick.json, which the tests read.
 // The one-colour versions follow one rule for every concept (plan Task 3, Step 4): every fill and
 // stroke becomes the one colour, except a white knockout drawn with a stroke, which becomes a hole
 // in itself (an inner subpath in the same d, fill-rule="evenodd"); painted flat it would merge with

@@ -6,7 +6,7 @@ export default defineConfig({
   build: { format: 'directory' },
   integrations: [
     sitemap({
-      filter: (page) => !/\/(brand|og)\//.test(page),
+      filter: (page) => !/\/og\//.test(page),
       i18n: { defaultLocale: 'en', locales: { en: 'en', zh: 'zh-Hans' } },
     }),
   ],
