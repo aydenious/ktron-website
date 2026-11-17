@@ -57,10 +57,30 @@ export function setup(section: HTMLElement, arrival: Arrival): void {
 
   const paint = painter(stage.querySelector<SVGSVGElement>('svg.scene')!);
   const header = () => document.querySelector<HTMLElement>('.site-header')?.offsetHeight ?? 0;
-  // A clicked header link may still be scrolling the page past the scene: the snap waits for the reader's next input.
-  const holdSnap = () => !!arrival.linkTarget();
+  // A clicked link (hero, header) scrolls the page on its own, maybe through the scene: the snap waits until that
+  // scroll has landed on its target, or the reader takes over. The loader's own record of the click goes once
+  // setup has run, so this keeps its own.
+  let target: Element | null = arrival.linkTarget();
+  const landed = (el: Element) => {
+    const margin = parseFloat(getComputedStyle(el).scrollMarginTop) || 0;
+    return Math.abs(el.getBoundingClientRect().top - margin) <= 4 || scrollY >= root.scrollHeight - innerHeight - 1;
+  };
+  const check = () => { if (target && landed(target)) target = null; };
+  for (const type of ['wheel', 'touchstart', 'keydown', 'pointerdown']) addEventListener(type, () => { target = null; }, { passive: true });
+  addEventListener('scroll', check, { passive: true });
+  // A scroll that ends outside the pin is over (it landed, or something stopped it): nothing to wait for.
+  addEventListener('scrollend', () => {
+    if (scrollY < Number(section.dataset.start) || scrollY > Number(section.dataset.end)) target = null;
+  });
+  addEventListener('click', (e) => {
+    const id = (e.target as Element).closest?.('a[href^="#"]')?.getAttribute('href')?.slice(1);
+    target = (id && document.getElementById(id)) || null;
+    check();
+  }, true);
+  const holdSnap = () => !!target;
   play({ section, stage, words, paint: (t) => paint(stateAt(t)), header, holdSnap });
   ScrollTrigger.refresh();
+  check();
   refreshWhenFontsSettle(document.fonts, () => ScrollTrigger.refresh());
 
   if (readerIsBelow) {

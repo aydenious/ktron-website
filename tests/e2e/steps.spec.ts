@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { stateAt } from '../../src/components/scene/steps';
-import { nudge, ready, scrollTo, settled, stage, state, still } from './helpers';
+import { how, nudge, ready, scrollTo, settled, stage, state, still } from './helpers';
 
 const AT_STEP_END = [2, 4, 5]; // stills drawn at their step's end
 async function finished(page: Page, n: number) {
@@ -90,4 +90,46 @@ test('a person whose door has not opened is hidden with the arms and crate they 
       const el = stage(page).locator(`[data-resident-${part}="${k}"]`);
       expect(await el.evaluate((e) => getComputedStyle(e).visibility), `resident ${k} ${part}`).toBe('hidden');
     }
+});
+
+test('Page Down and Space (about 1.75 bands each) play two steps and settle on a step, from step 1 and from step 3', async ({ page }) => {
+  await page.goto('/');
+  await atStep(page, 1);
+  await page.keyboard.press('PageDown'); // 1.75 bands: 0.2 past the third settle point, so step 3 is committed
+  await finished(page, 3);
+  await page.keyboard.press('Space');
+  await finished(page, 5);
+});
+
+/** A link clicked on the page scrolls it on its own; once that scroll has landed the snap must work again. */
+async function stillSnaps(page: Page) {
+  await expect.poll(() => page.evaluate(() => new Promise<boolean>((done) => {
+    const y = scrollY;
+    setTimeout(() => done(scrollY === y && y > 100), 600); // ScrollTrigger snaps nothing in its first 0.5 s
+  })), { timeout: 8000 }).toBe(true); // the link's own scroll has started and has stopped
+  const { start, B } = await state(page);
+  await scrollTo(page, start + 40); // just inside the pin: the snap has to pull it back to the settle point
+  await finished(page, 1);
+  await nudge(page, 0.3 * B);
+  await finished(page, 2);
+}
+
+test('after the hero link is clicked, a small scroll in the scene still settles on its step', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('a.how').click();
+  await expect(page.locator('section#how[data-ready]')).toHaveCount(1);
+  await stillSnaps(page);
+});
+
+test('after a header link is clicked and the page scrolled back, a small scroll in the scene still settles on its step', async ({ page }) => {
+  await page.goto('/');
+  if (page.viewportSize()!.width >= 768) await page.locator('nav.desk a[href="#contact"]').click();
+  else {
+    await page.locator('details.menu summary').click();
+    await page.locator('details.menu a[href="#contact"]').click();
+  }
+  await expect.poll(async () => (await page.locator('#contact').evaluate((e) => e.getBoundingClientRect().top)) < 200, { timeout: 8000 }).toBe(true);
+  await how(page).scrollIntoViewIfNeeded();
+  await expect(page.locator('section#how[data-ready]')).toHaveCount(1);
+  await stillSnaps(page);
 });
