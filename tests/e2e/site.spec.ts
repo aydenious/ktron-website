@@ -33,6 +33,16 @@ for (const home of HOMES) {
       });
     }
 
+    for (const width of [390, 768, 1440]) {
+      test(`the service cards fill every row at ${width} px`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 });
+        await page.goto(home);
+        const tops = await page.locator('#services li').evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)));
+        const perRow = [...new Set(tops)].map((top) => tops.filter((t) => t === top).length);
+        expect(new Set(perRow).size, `cards per row: ${perRow.join(', ')}`).toBe(1);
+      });
+    }
+
     test('no console errors from top to bottom', async ({ page }) => {
       const errors: string[] = [];
       page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });

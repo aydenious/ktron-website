@@ -1,11 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import en from '../../src/i18n/en.json';
 import zh from '../../src/i18n/zh.json';
-import { PHOTO_POSITION } from '../../src/assets/photos';
 import { page } from './dist';
 
 const ORDER = ['top', 'why', 'services', 'how', 'traceability', 'numbers', 'quality', 'area', 'faq', 'contact'];
-const SERVICES = ['trimming', 'deflashing', 'inspection', 'sorting', 'rework'] as const;
+const SERVICES = ['trimming', 'deflashing', 'inspection', 'sorting'] as const;
 
 describe.each([['/', en], ['/zh/', zh]] as const)('%s sections', (path, s) => {
   const doc = page(path);
@@ -16,14 +15,14 @@ describe.each([['/', en], ['/zh/', zh]] as const)('%s sections', (path, s) => {
   it('one h1, the headline', () => {
     expect(text('h1')).toEqual([s['hero.title']]);
   });
-  it('five service cards with their names', () => {
+  it('four service cards with their names', () => {
     expect(text('#services h3')).toEqual(SERVICES.map((k) => s[`services.${k}.name`]));
-    expect(doc.querySelectorAll('#services img')).toHaveLength(5);
+    expect(doc.querySelectorAll('#services img')).toHaveLength(4);
   });
   it('every image has alt text in this language, width and height', () => {
     const alts = Object.entries(s).filter(([k]) => /^photo\..+\.alt$/.test(k)).map(([, v]) => v);
     const imgs = doc.querySelectorAll('main img');
-    expect(imgs.length).toBeGreaterThanOrEqual(7);
+    expect(imgs.length).toBeGreaterThanOrEqual(6);
     for (const img of imgs) {
       expect(alts).toContain(img.getAttribute('alt'));
       expect(Number(img.getAttribute('width'))).toBeGreaterThan(0);
@@ -43,10 +42,6 @@ describe.each([['/', en], ['/zh/', zh]] as const)('%s sections', (path, s) => {
   it('each service card shows its own photo, with its own alt text', () => {
     const imgs = doc.querySelectorAll('#services li img');
     expect(imgs.map((i) => i.getAttribute('alt'))).toEqual(SERVICES.map((k) => s[`photo.${k}.alt` as keyof typeof s]));
-  });
-  it('the inspection card keeps the microscope in the crop', () => {
-    const img = doc.querySelectorAll('#services li img')[SERVICES.indexOf('inspection')];
-    expect(img.getAttribute('style')).toContain(`object-position: ${PHOTO_POSITION.inspection}`);
   });
   it('the hero photo is eager and high priority', () => {
     const img = doc.querySelector('#top img')!;
