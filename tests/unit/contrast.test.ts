@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { tokenValue } from '../../src/styles/token';
 import { markupOf, read, rulesOf, SOURCES, type Rule } from '../helpers/css';
@@ -76,7 +76,6 @@ const GRAPHIC_RULES = ['.float-wa'];
 // Navy backgrounds that do not carry `.on-dark`, with the reason each is safe.
 const NAVY_WITHOUT_ON_DARK: [file: string, selector: string, reason: string][] = [
   ['src/components/Header.astro', '.skip', 'the skip link is a small navy box over the paper header; its ring sits outside it, on paper'],
-  ['src/pages/brand.astro', '.tile.navy', 'brand preview page, removed at launch; a logo swatch, not a control'],
   ['src/pages/og/[lang].astro', 'body', 'the share-image page puts on-dark on <html>, the one root; body paints that same navy'],
 ];
 // Decorative edges: the text or shape beside them, not the line, identifies the thing.
@@ -187,6 +186,12 @@ describe('contrast (WCAG 2.2 AA)', () => {
     it('has no pair, dark section, light-on-light text or edge outside the tables', () => {
       expect(contrastProblems(rules, markupOf)).toEqual([]);
     });
+  });
+
+  it('every allow-list entry still names a rule that exists (a stale entry would excuse a future one)', () => {
+    const entries = [...NAVY_WITHOUT_ON_DARK.map(([f, sel]) => [f, sel]), ...DECORATIVE_EDGE_RULES];
+    const missing = entries.filter(([file, selector]) => !existsSync(file) || !rulesOf(file).some((r) => r.selector === selector));
+    expect(missing).toEqual([]);
   });
 
   describe('the guard itself', () => {
