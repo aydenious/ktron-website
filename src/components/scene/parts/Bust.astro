@@ -1,5 +1,6 @@
 ---
 // A person seated at a table, seen through a window: torso and head, hands on the table (mockup `bust`). Static.
+import Face from './Face.astro';
 import Head from './Head.astro';
 import type { Look } from './looks';
 import Torso from './Torso.astro';
@@ -17,4 +18,5 @@ const ARMS = [{ side: -1, turn: 29.1 }, { side: 1, turn: -29.1 }] as const;
     </>
   ))}
   <Head look={look} cy={-23} />
+  <Face cy={-23} />
 </g>

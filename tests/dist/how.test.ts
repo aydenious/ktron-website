@@ -51,10 +51,14 @@ describe.each([['/', en], ['/zh/', zh]] as const)('%s how it works stills', (pat
     expect(lit(1)).toBe(4);
     expect(steps.map((_, i) => attr(i, '[data-lens]', 'opacity'))).toEqual(['0', '0', '0', '1', '0']);
   });
+  it('the QC sign reads the 10x check in every still, in the page language', () => {
+    steps.forEach((li, i) => expect(li.querySelector('svg .text-qc')?.text, `still ${i + 1}`).toBe(s['scene.qc']));
+    expect(s['scene.qc']).toBe(path === '/' ? 'QC 10x' : '质检10x');
+  });
   it('the van body faces as the model says, and the KTRON name is never inside the flipped group', () => {
     STILLS.forEach((_, i) => {
       expect(steps[i].querySelectorAll('[data-van-body] text'), `still ${i + 1} text in the van body`).toHaveLength(0);
-      expect(steps[i].querySelector('[data-van] > text')?.text, `still ${i + 1} van name`).toBe('KTRON');
+      expect(steps[i].querySelector('[data-van-load] > text')?.text, `still ${i + 1} van name`).toBe('KTRON');
     });
   });
 });

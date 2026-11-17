@@ -1,8 +1,8 @@
 ---
-// A head with its neck, hair and face (mockup `head`). `face` is the hook on the eyes and mouth alone.
+// A head with its neck and hair (mockup `head`); the face is its own part (Face.astro).
 import type { Look } from './looks';
-interface Props { look: Look; cy?: number; face?: Record<string, string> }
-const { look, cy = -40, face = {} } = Astro.props;
+interface Props { look: Look; cy?: number }
+const { look, cy = -40 } = Astro.props;
 ---
 <rect class={look.skin} x="-2" y={cy + 5} width="4" height="4" />
 <circle class={look.skin} cx="0" cy={cy} r="6.2" />
@@ -26,8 +26,3 @@ const { look, cy = -40, face = {} } = Astro.props;
   </>
 )}
 {look.hair === 'short' && <path class="sc-ink" d={`M-6.4 ${cy - 0.5} a6.4 6.6 0 0 1 12.8 0 l-1.2 -0.6 q-5 -3.2 -10.4 0 Z`} />}
-<g {...face}>
-  <circle class="sc-ink" cx="-2.2" cy={cy + 0.6} r="0.85" />
-  <circle class="sc-ink" cx="2.2" cy={cy + 0.6} r="0.85" />
-  <path class="sc-stroke-ink" d={`M-1.8 ${cy + 3} q1.8 1.4 3.6 0`} stroke-width="0.7" fill="none" stroke-linecap="round" />
-</g>

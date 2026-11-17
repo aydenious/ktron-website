@@ -119,6 +119,10 @@ describe('hooks', () => {
     expect(bind('van', stateAt(0))).toEqual({ 'data-van': '0', transform: `translate(${FACTORY_X} 344)` });
     expect(bind('house-crate', stateAt(2), 3)).toEqual({ 'data-house-crate': '3', visibility: 'visible' });
   });
+  it('the van load keeps its centre over the box whichever way the van faces (ruling R10)', () => {
+    expect(HOOKS['van-load'].value(stateAt(0.5), 0)).toBe('translate(0 0)');
+    expect(HOOKS['van-load'].value(stateAt(2.6), 0)).toBe('translate(10 0)');
+  });
   it('every hook writes a clean value at every moment: no NaN, undefined or −0', () => {
     for (const t of samples) {
       const s = stateAt(t);

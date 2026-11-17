@@ -2,7 +2,10 @@
    only from --scene-* artwork tokens or the brand tokens in src/styles/tokens.css. Fills sc-*, strokes sc-stroke-*,
    gradient stops sc-stop-*, text text-*. */
 
-.scene text { font-family: 'Manrope Variable', system-ui, sans-serif; }
+.scene text, symbol text { font-family: 'Manrope Variable', system-ui, sans-serif; }
+
+/* The symbols hold the still drawing; a symbol clips to its own viewport unless told not to. */
+symbol { overflow: visible; }
 
 /* A hidden group hides everything in it, even a part that says visibility="visible" for itself (a hidden walker's arms and crate). */
 .scene [visibility='hidden'] * { visibility: hidden; }
@@ -18,6 +21,7 @@
 .sc-grey-2 { fill: var(--grey-2); }
 .sc-grey-3 { fill: var(--grey-3); }
 .sc-stroke-gold { stroke: var(--gold); }
+.sc-stroke-white { stroke: var(--white); }
 
 /* sky */
 .sc-sun { fill: var(--scene-sun); }

@@ -3,16 +3,16 @@ import './scene.css';
 import Factory from './parts/Factory.astro';
 import Ground from './parts/Ground.astro';
 import House from './parts/House.astro';
+import Inspection from './parts/Inspection.astro';
 import { LOOKS } from './parts/looks';
 import Person from './parts/Person.astro';
 import Sky from './parts/Sky.astro';
-import { INSPECT_X, VIEW_H, VIEW_W, type SceneState } from './steps';
+import Van from './parts/Van.astro';
+import { VIEW_H, VIEW_W, type SceneState } from './steps';
 import { bind } from './view';
 import type { Lang } from '../../i18n';
 interface Props { state: SceneState; lang: Lang }
 const { state: s, lang } = Astro.props;
-const I = INSPECT_X;
-const SLOTS = [0, 1, 2, 3];
 const HOUSES = [0, 1, 2, 3] as const;
 ---
 <svg class="scene" viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} width={VIEW_W} height={VIEW_H} aria-hidden="true" focusable="false">
@@ -23,33 +23,11 @@ const HOUSES = [0, 1, 2, 3] as const;
 
     {HOUSES.map((i) => <House i={i} s={s} />)}
 
-    <!-- the inspection house and its magnifier sign -->
-    <rect class="sc-white" x={I - 60} y="210" width="120" height="90" />
-    <path class="sc-navy" d={`M${I - 66} 213 L${I} 176 L${I + 66} 213 Z`} />
-    <rect class="sc-navy-2" x={I - 14} y="258" width="28" height="42" />
-    <rect class="sc-navy-2" x={I - 2} y="146" width="4" height="32" />
-    <circle class="sc-gold-soft" cx={I} cy="128" r="34" {...bind('lens', s)} />
-    <circle class="sc-navy-2 sc-stroke-gold" cx={I} cy="128" r="18" stroke-width="6" />
-    <path class="sc-stroke-gold" d={`M${I + 13} ${141} L${I + 26} ${154}`} stroke-width="7" stroke-linecap="round" />
+    <Inspection s={s} lang={lang} />
 
     {HOUSES.map((i) => <Person who="resident" i={i} look={LOOKS.residents[i]} s={s} />)}
     <Person who="driver" look={LOOKS.driver} s={s} />
 
-    <!-- the van: the body flips with direction, the name and crates do not -->
-    <g {...bind('van', s)}>
-      <g {...bind('van-body', s)}>
-        <rect class="sc-white" x="-36" y="-52" width="72" height="44" rx="4" />
-        <path class="sc-white" d="M36 -40 H52 L62 -24 V-8 H36 Z" />
-        <path class="sc-navy-2" d="M40 -36 H50 L57 -24 H40 Z" />
-        <circle class="sc-slate" cx="-20" cy="-6" r="9" />
-        <circle class="sc-slate" cx="46" cy="-6" r="9" />
-      </g>
-      <text class="text-van" x="0" y="-24" text-anchor="middle" font-size="15" font-weight="800">KTRON</text>
-      {SLOTS.map((j) => (
-        <g {...bind('van-crate', s, j)}>
-          <rect class="sc-gold" x={-34 + j * 17} y="-66" width="15" height="13" />
-        </g>
-      ))}
-    </g>
+    <Van s={s} />
   </g>
 </svg>

@@ -1,0 +1,26 @@
+---
+// The inspection house (mockup `inspection`), x 808–952: a room with the inspector at a 10x microscope, the magnifier
+// sign above it (its lens lights up while he inspects) and the tick that appears when the lot has passed. The shell
+// and the room are symbols (Symbols.astro); the sign, the frame and everything a hook moves are drawn here.
+import { t, type Lang } from '../../../i18n';
+import type { SceneState } from '../steps';
+import { bind } from '../view';
+interface Props { s: SceneState; lang: Lang }
+const { s, lang } = Astro.props;
+---
+<use href="#scene-inspect-shell" />
+<text class="text-qc" x="880" y="222" text-anchor="middle" font-size="8" font-weight="800">{t(lang, 'scene.qc')}</text>
+<g clip-path="url(#scene-clip-qc)"><use href="#scene-inspect-room" /></g>
+<rect class="sc-stroke-white" x="824" y="226" width="76" height="48" fill="none" stroke-width="2.5" />
+<path class="sc-night-1" d="M808 198 H952 V208 H945 V300 H815 V208 H808 Z" {...bind('wash', s, 5)} />
+<rect class="sc-navy-2" x="878" y="150" width="4" height="48" />
+<circle cx="880" cy="128" r="36" fill="url(#scene-lens-glow)" {...bind('qc-glow', s)} />
+<circle class="sc-navy-2 sc-stroke-gold" cx="880" cy="128" r="18" stroke-width="6" />
+<path class="sc-stroke-gold" d="M893 141 L906 154" stroke-width="7" stroke-linecap="round" />
+<circle class="sc-gold-soft" cx="880" cy="128" r="14" {...bind('lens', s)} />
+<g transform="translate(920 104)">
+  <g {...bind('tick', s)}>
+    <circle class="sc-gold" r="11" />
+    <path class="sc-stroke-white" d="M-5 0 l4 4 l7 -8" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+</g>

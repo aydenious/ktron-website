@@ -1,7 +1,10 @@
 ---
-// Gradients and clip paths, drawn once per page: the five stills and the stage clone only point at them.
+// Gradients, clip paths and the symbols of the still drawing, made once per page: the five stills and the stage
+// clone only point at them (url(#…) and use href).
 import '../scene.css';
 import { HOUSE_X } from '../layout';
+import PersonSymbols from './PersonSymbols.astro';
+import Symbols from './Symbols.astro';
 const linear = (id: string, stops: string[]) => ({ id, stops: stops.map((c, k) => ({ c, at: (k / (stops.length - 1)).toFixed(2) })) });
 const SKIES = [
   linear('day', ['day-1', 'day-2', 'day-3']),
@@ -33,5 +36,7 @@ const GLOWS = [['sun-halo', 'sun', 0.35], ['moon-halo', 'gold-soft', 0.25], ['li
       <clipPath id={`scene-clip-window-${i}`}><rect x={x - 48} y="232" width="42" height="32" /></clipPath>
     ))}
     <clipPath id="scene-clip-qc"><rect x="826" y="228" width="72" height="44" /></clipPath>
+    <Symbols />
+    <PersonSymbols />
   </defs>
 </svg>

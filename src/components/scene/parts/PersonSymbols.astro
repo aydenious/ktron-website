@@ -1,0 +1,37 @@
+---
+// The still parts of the walkers, drawn once: the sections of a person that no hook changes (the groups that
+// move wrap a `use` of these). A leg takes its trousers from the `use` that draws it (fill is inherited).
+import Face from './Face.astro';
+import Head from './Head.astro';
+import { LOOKS } from './looks';
+import Torso from './Torso.astro';
+const WALKERS = [...LOOKS.residents, LOOKS.driver];
+const SIDES = [-1, 1] as const;
+---
+<symbol id="scene-leg">
+  <rect x="-2.6" y="0" width="5.2" height="15" rx="2" />
+  <ellipse class="sc-ink" cx="-0.2" cy="15.4" rx="3.6" ry="1.6" />
+</symbol>
+<symbol id="scene-face"><Face cy={-40} /></symbol>
+{WALKERS.map((look) => (
+  <>
+    <symbol id={`scene-torso-${look.id}`}><Torso look={look} /></symbol>
+    <symbol id={`scene-head-${look.id}`}><Head look={look} /></symbol>
+    <symbol id={`scene-arms-${look.id}`}>
+      {SIDES.map((k) => (
+        <>
+          <rect class={look.shirt} x={k * 9 - 2} y="-29" width="4" height="13" rx="2" />
+          <circle class={look.skin} cx={k * 9} cy="-15" r="2.2" />
+        </>
+      ))}
+    </symbol>
+    <symbol id={`scene-carry-${look.id}`}>
+      {SIDES.map((k) => (
+        <>
+          <rect class={look.shirt} x={k * 9.5 - 2} y="-29" width="4" height="10" rx="2" />
+          <circle class={look.skin} cx={k * 9} cy="-18" r="2.2" />
+        </>
+      ))}
+    </symbol>
+  </>
+))}

@@ -1,9 +1,8 @@
 ---
 // A walking person, feet at y 0, drawn at 1.35 times the mockup's size (ruling R17). Every part with a hook
 // is a group of its own: the legs swing about the hips, the arms and the crate swap, the eyes follow the walk.
-import Head from './Head.astro';
+// What a hook never changes is a symbol (PersonSymbols.astro, Symbols.astro) that the group draws with `use`.
 import type { Look } from './looks';
-import Torso from './Torso.astro';
 import type { SceneState } from '../steps';
 import { bind, type Hook } from '../view';
 interface Props { who: 'driver' | 'resident'; i?: number; look: Look; s: SceneState }
@@ -11,39 +10,24 @@ const { who, i = 0, look, s } = Astro.props;
 type Part = 'show' | 'face' | 'crate' | 'arms' | 'leg-a' | 'leg-b';
 const h = (part: Part) => bind(`${who}-${part}` satisfies Hook, s, i);
 const LEGS = [{ part: 'leg-a', dx: -3.4 }, { part: 'leg-b', dx: 3.4 }] as const;
-const SIDES = [-1, 1] as const;
+const id = look.id;
 ---
 <g {...bind(who, s, i)}>
   <g {...h('show')}>
     <g transform="scale(1.35)">
       {LEGS.map(({ part, dx }) => (
         <g transform={`translate(${dx} -16)`}>
-          <g {...h(part)}>
-            <rect class={look.trousers} x="-2.6" y="0" width="5.2" height="15" rx="2" />
-            <ellipse class="sc-ink" cx="-0.2" cy="15.4" rx="3.6" ry="1.6" />
-          </g>
+          <g {...h(part)}><use href="#scene-leg" class={look.trousers} /></g>
         </g>
       ))}
-      <Torso look={look} />
-      <g {...h('arms')}>
-        {SIDES.map((k) => (
-          <>
-            <rect class={look.shirt} x={k * 9 - 2} y="-29" width="4" height="13" rx="2" />
-            <circle class={look.skin} cx={k * 9} cy="-15" r="2.2" />
-          </>
-        ))}
-      </g>
+      <use href={`#scene-torso-${id}`} />
+      <g {...h('arms')}><use href={`#scene-arms-${id}`} /></g>
       <g {...h('crate')}>
-        <rect class="sc-gold" x="-10" y="-25" width="20" height="13" rx="1.6" />
-        <rect class="sc-navy" x="-10" y="-20" width="20" height="2.4" opacity="0.28" />
-        {SIDES.map((k) => (
-          <>
-            <rect class={look.shirt} x={k * 9.5 - 2} y="-29" width="4" height="10" rx="2" />
-            <circle class={look.skin} cx={k * 9} cy="-18" r="2.2" />
-          </>
-        ))}
+        <use href="#scene-crate" x="-10" y="-25" />
+        <use href={`#scene-carry-${id}`} />
       </g>
-      <Head look={look} face={h('face')} />
+      <use href={`#scene-head-${id}`} />
+      <g {...h('face')}><use href="#scene-face" /></g>
     </g>
   </g>
 </g>

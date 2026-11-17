@@ -1,44 +1,22 @@
 ---
-// The factory, x 20–230: the dock the van loads from, the crates stacked on it and the roller door.
+// The factory, x 20–230: the dock the van loads from, the crates stacked on it and the roller door. The building is
+// a symbol (Symbols.astro); the smoke, the sign, the door and the crates are drawn here.
 import { DOCK_SLOTS } from '../layout';
 import { bind } from '../view';
 import type { SceneState } from '../steps';
 import { t, type Lang } from '../../../i18n';
 interface Props { s: SceneState; lang: Lang }
 const { s, lang } = Astro.props;
-const TEETH = [0, 1, 2];
-const SLATS = Array.from({ length: 10 }, (_, k) => 240 + 6 * k);
 const SMOKE = [[204, 128, 8, 0.8], [214, 110, 11, 0.6], [230, 90, 15, 0.4]];
 ---
 {SMOKE.map(([cx, cy, r, op]) => <circle class="sc-white" data-amb="smoke" cx={cx} cy={cy} r={r} opacity={op} />)}
-<rect class="sc-grey-3" x="195" y="136" width="16" height="66" />
-<rect class="sc-gold" x="195" y="146" width="16" height="6" />
-{TEETH.map((k) => (
-  <>
-    <path class="sc-navy-2" d={`M${20 + 70 * k} 200 V168 L${90 + 70 * k} 200 Z`} />
-    <rect class="sc-glass" x={20 + 70 * k} y="168" width="7" height="32" />
-  </>
-))}
-<rect class="sc-grey-1" x="20" y="200" width="210" height="100" />
-<rect class="sc-navy" x="20" y="200" width="210" height="22" />
+<use href="#scene-factory" />
 <text class="text-factory" x="125" y="216" text-anchor="middle" font-size="13" font-weight="800">{t(lang, 'scene.factory')}</text>
-{TEETH.map((k) => (
-  <>
-    <rect class="sc-glass" x={32 + 30 * k} y="234" width="22" height="18" />
-    <rect class="sc-white" x={42 + 30 * k} y="234" width="1.5" height="18" />
-  </>
-))}
-<rect class="sc-slate" x="140" y="236" width="72" height="64" />
-<rect class="sc-grey-2" x="140" y="236" width="72" height="14" />
-<g {...bind('factory-door', s)}>
-  <rect class="sc-grey-2" x="140" y="236" width="72" height="64" />
-  {SLATS.map((y) => <rect class="sc-grey-3" x="142" y={y} width="68" height="1.2" />)}
-</g>
+<g {...bind('factory-door', s)}><use href="#scene-roller" /></g>
 <rect class="sc-grey-3" x="130" y="294" width="94" height="8" />
 {DOCK_SLOTS.map(([x, y], k) => (
   <g {...bind('dock-crate', s, k)}>
-    <rect class="sc-gold" x={x} y={y} width="20" height="13" rx="1.6" />
-    <rect class="sc-navy" x={x} y={y + 5} width="20" height="2.4" opacity="0.28" />
+    <use href="#scene-crate" x={x} y={y} />
   </g>
 ))}
 <path class="sc-night-1" d="M20 200 V168 L90 200 V168 L160 200 V168 L230 200 V300 H20 Z M195 136 h16 v56 h-16 Z" {...bind('wash', s, 4)} />

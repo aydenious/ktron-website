@@ -12,6 +12,8 @@ export const view = {
   van: (s: SceneState) => `translate(${r(s.vanX)} ${ROAD_Y})`,
   vanBody: (s: SceneState) => `scale(${s.facing} 1)`,
   wheel: (s: SceneState) => `rotate(${s.wheel})`,
+  /** The label and the rack crates stay outside the flip group; this keeps them over the box's centre. */
+  vanLoad: (s: SceneState) => `translate(${r((1 - s.facing) * 5)} 0)`,
   vanCrate: (s: SceneState, j: number) => shown(j < s.vanCrates),
   /** The night sky layer; 0.85 at full night so the stars and moon read against it. */
   night: (s: SceneState) => opacity(s.night * 0.85),
@@ -61,6 +63,7 @@ export const HOOKS = {
   'van-body': at('transform', view.vanBody),
   wheel: at('transform', view.wheel),
   headlight: at('opacity', (s) => opacity(s.headlights)),
+  'van-load': at('transform', view.vanLoad),
   'van-crate': at('visibility', view.vanCrate),
   sunset: at('opacity', (s) => opacity(s.sunset)),
   night: at('opacity', view.night),

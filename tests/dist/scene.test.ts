@@ -1,8 +1,10 @@
 import { readFileSync } from 'node:fs';
+import { gzipSync } from 'node:zlib';
 import { parse, type HTMLElement } from 'node-html-parser';
 import { describe, expect, it } from 'vitest';
 import { painter } from '../../src/components/scene/paint';
-import { STILLS } from '../../src/components/scene/steps';
+import { CLIP } from '../../src/components/scene/scroll';
+import { STILLS, stateAt } from '../../src/components/scene/steps';
 import { HOOKS } from '../../src/components/scene/view';
 
 const pages = ['dist/index.html', 'dist/zh/index.html'];
@@ -41,7 +43,6 @@ describe.each(pages)('%s scene', (file) => {
       expect(svg.querySelectorAll(`[data-${h}]`).map((el) => el.getAttribute(`data-${h}`)).sort(), h).toEqual(['0', '1', '2', '3']);
     for (const h of ['driver', 'driver-show', 'driver-face', 'driver-crate', 'driver-arms', 'driver-leg-a', 'driver-leg-b'])
       expect(svg.querySelectorAll(`[data-${h}]`), h).toHaveLength(1);
-    expect(svg.querySelectorAll('[data-wash]').map((el) => el.getAttribute('data-wash')).sort()).toEqual(['0', '1', '2', '3', '4']);
   });
   it('shows the driver carrying a crate in front of the factory in the last still', () => {
     const last = stills(file)[4];
@@ -57,5 +58,52 @@ describe.each(pages)('%s scene', (file) => {
   it('has the sky layers, the factory door and the dock crates', () => {
     for (const h of ['sunset', 'dawn', 'night', 'sun', 'moon', 'moon-rise', 'stars', 'factory-door', 'wash']) expect(stills(file)[0].querySelectorAll(`[data-${h}]`).length, h).toBeGreaterThan(0);
     expect(stills(file)[0].querySelectorAll('[data-dock-crate]')).toHaveLength(4);
+  });
+  it('draws the inspection house, the van and its load, and every wash', () => {
+    const svg = stills(file)[0];
+    for (const h of ['qc-glow', 'lens', 'tick', 'van', 'van-body', 'headlight', 'van-load']) expect(svg.querySelectorAll(`[data-${h}]`), h).toHaveLength(1);
+    expect(svg.querySelectorAll('[data-wheel]')).toHaveLength(2);
+    expect(svg.querySelectorAll('[data-van-crate]')).toHaveLength(4);
+    expect(svg.querySelectorAll('[data-wash]').map((el) => el.getAttribute('data-wash')).sort()).toEqual(['0', '1', '2', '3', '4', '5', '6']);
+    expect(svg.querySelector('[data-van-body] text')).toBeNull();
+  });
+  it('writes at most 60 attributes in any 60 fps frame and uses no filter or mask', () => {
+    const svg = stills(file)[0];
+    let writes = 0;
+    const paint = painter({
+      querySelectorAll: (q: string) =>
+        svg.querySelectorAll(q).map((el) => ({
+          getAttribute: (a: string) => el.getAttribute(a),
+          setAttribute: (a: string, v: string) => {
+            writes++;
+            el.setAttribute(a, v);
+          },
+        })),
+    });
+    paint(stateAt(0));
+    for (let step = 0; step < 5; step++)
+      for (let f = 1, n = Math.round(CLIP[step] * 60); f <= n; f++) {
+        writes = 0;
+        paint(stateAt(step + f / n));
+        expect(writes, `t ${(step + f / n).toFixed(3)}`).toBeLessThanOrEqual(60);
+      }
+    expect(svg.querySelectorAll('filter, mask, [filter], [mask]')).toHaveLength(0);
+  });
+  it('stays light: the gzipped page is at most 30 KB', () => {
+    expect(gzipSync(readFileSync(file)).length).toBeLessThanOrEqual(30 * 1024);
+  });
+  it('shares static drawing through symbols: every <use href> names a symbol on the page and no hook sits in a symbol', () => {
+    const root = parse(readFileSync(file, 'utf8'));
+    const symbols = root.querySelectorAll('symbol');
+    expect(symbols.length).toBeGreaterThan(0);
+    const ids = symbols.map((el) => el.getAttribute('id'));
+    expect(new Set(ids).size).toBe(ids.length);
+    const uses = root.querySelectorAll('use');
+    expect(uses.length).toBeGreaterThan(0);
+    for (const use of uses) expect(ids, use.outerHTML.slice(0, 80)).toContain(use.getAttribute('href')?.replace(/^#/, ''));
+    for (const sym of symbols) {
+      const marked = [sym, ...sym.querySelectorAll('*')].filter((el) => Object.keys(el.attributes).some((a) => a.startsWith('data-')));
+      expect(marked.map((el) => el.outerHTML.slice(0, 60)), `data attributes inside #${sym.getAttribute('id')}`).toEqual([]);
+    }
   });
 });
