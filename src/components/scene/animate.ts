@@ -2,7 +2,8 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { refreshWhenFontsSettle } from './fonts';
 import { painter } from './paint';
-import { STEPS, stateAt, stepOf } from './steps';
+import { play } from './play';
+import { stateAt } from './steps';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -18,7 +19,7 @@ interface Arrival {
   whenOver: (done: () => void) => void;
 }
 
-/** Turns the five stills of section#how into one pinned scene scrubbed by scrolling. */
+/** Turns the five stills of section#how into one pinned scene: each scroll gesture starts a step and the step plays to its end. */
 export function setup(section: HTMLElement, arrival: Arrival): void {
   const list = section.querySelector<HTMLElement>('ol[data-stills]')!;
   const stills = [...list.querySelectorAll('li[data-step]')];
@@ -49,45 +50,16 @@ export function setup(section: HTMLElement, arrival: Arrival): void {
   const stage = document.createElement('div');
   stage.className = 'stage';
   stage.dataset.stage = '';
-  stage.dataset.step = '1';
   stage.setAttribute('aria-hidden', 'true');
   stage.append(stills[0].querySelector('figure')!.cloneNode(true));
   list.after(stage);
   list.classList.add('visually-hidden');
 
   const paint = painter(stage.querySelector<SVGSVGElement>('svg.scene')!);
-  const counter = stage.querySelector('[data-counter]')!;
-  const caption = stage.querySelector('[data-caption]')!;
-  const render = (t: number) => {
-    paint(stateAt(t));
-    const n = stepOf(t);
-    if (String(n) !== stage.dataset.step) {
-      stage.dataset.step = String(n);
-      counter.textContent = words[n - 1].counter;
-      caption.textContent = words[n - 1].caption;
-    }
-  };
-
   const header = () => document.querySelector<HTMLElement>('.site-header')?.offsetHeight ?? 0;
-  const screens = () => (matchMedia('(min-width: 768px)').matches ? 4 : 3);
-  const clock = { t: 0 };
-  gsap.to(clock, {
-    t: STEPS,
-    ease: 'none',
-    onUpdate: () => render(clock.t),
-    scrollTrigger: {
-      trigger: stage,
-      pin: true,
-      start: () => `top ${header()}px`,
-      end: () => `+=${Math.round(innerHeight * screens())}`,
-      scrub: 0.4,
-      invalidateOnRefresh: true,
-      onRefresh: (st) => {
-        section.dataset.start = String(Math.round(st.start));
-        section.dataset.end = String(Math.round(st.end));
-      },
-    },
-  });
+  // A clicked header link may still be scrolling the page past the scene: the snap waits for the reader's next input.
+  const holdSnap = () => !!arrival.linkTarget();
+  play({ section, stage, words, paint: (t) => paint(stateAt(t)), header, holdSnap });
   ScrollTrigger.refresh();
   refreshWhenFontsSettle(document.fonts, () => ScrollTrigger.refresh());
 
