@@ -49,8 +49,17 @@ test('a scroll during a clip ends at the latest commit', async ({ page }) => {
   await atStep(page, 1);
   await nudge(page, 0.3 * (await state(page)).B);
   await expect.poll(async () => Number((await state(page)).t)).toBeGreaterThan(1.1);
+  // The page has to have landed on step 2's settle point before the second scroll. The nudge is one instant jump;
+  // landing in the middle of a snap, ScrollTrigger reads it as the reader taking over and kills the snap, and it
+  // snaps again only once its velocity (this one jump, with no events after it) has died away: the page then sits
+  // short of the settle point for seconds. A finger or wheel scrolls in a stream of events, so this does not arise.
+  const { start, B } = await state(page);
+  await expect.poll(() => page.evaluate((at) => new Promise<boolean>((done) => {
+    const y = scrollY;
+    setTimeout(() => done(scrollY === y && Math.abs(y - at) <= 2), 300); // two equal reads 300 ms apart: the snap's tween is over
+  }), start + B), { timeout: 5000 }).toBe(true);
   expect(Number((await state(page)).t)).toBeLessThan(1.9); // step 2 is still playing
-  await nudge(page, (await state(page)).B);
+  await nudge(page, B);
   await finished(page, 3);
 });
 
@@ -69,10 +78,15 @@ test('past step 5 the page unpins and carries on, and a small scroll back up is 
 
 test('a deep link below the section lands on the finished scene, with nothing playing', async ({ page }) => {
   await page.goto('/#traceability');
+  // The scene's script is asked for once the section's bottom edge is within 200 px of the viewport (the loader's
+  // IntersectionObserver). Chromium jumps straight to the fragment, so the reader has to scroll up that far; mobile
+  // WebKit scrolls to the fragment smoothly, through the section, so the script is already loading or built when
+  // this starts. Page Up is for the first case only, and only until the script has been asked for: after that a
+  // Page Up is a reader scrolling back up into the built scene, which plays steps back (not what this test is about).
   await expect.poll(async () => {
-    const near = await page.locator('section#how').evaluate((e) => e.getBoundingClientRect().top > -200);
-    if (!near) await page.keyboard.press('PageUp');
-    return near;
+    const { built, near } = await how(page).evaluate((e) => ({ built: 'ready' in e.dataset, near: e.getBoundingClientRect().bottom > -200 }));
+    if (!built && !near) await page.keyboard.press('PageUp');
+    return built || near;
   }, { timeout: 30000, intervals: [300] }).toBe(true);
   await expect(page.locator('section#how[data-ready]')).toHaveCount(1);
   expect((await state(page)).t).toBe('5.000');
