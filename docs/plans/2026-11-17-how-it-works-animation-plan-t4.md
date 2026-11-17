@@ -12,6 +12,8 @@ Part of the plan `docs/plans/2026-11-17-how-it-works-animation-plan.md`. Read it
 - Modify: `src/components/scene/view.ts` (add the `van-load` hook)
 - Modify: `src/components/scene/Scene.astro` (final composition; every old drawing piece gone)
 - Modify: src/components/scene/scene.css
+- Modify: src/components/scene/parts/Defs.astro, House.astro, Bust.astro, Factory.astro, Ground.astro (static
+  drawing moved into symbols; ruling of 2026-11-17)
 - Modify: `src/i18n/en.json`, `src/i18n/zh.json` (add `scene.qc`)
 - Test: `tests/unit/steps.test.ts` (van-load), tests/dist/scene.test.ts (extend), `tests/dist/how.test.ts`
 
@@ -77,9 +79,17 @@ it('draws the inspection house, the van and its load, and every wash', () => {
   expect(svg.querySelectorAll('[data-wash]').map((el) => el.getAttribute('data-wash')).sort()).toEqual(['0', '1', '2', '3', '4', '5', '6']);
   expect(svg.querySelector('[data-van-body] text')).toBeNull();
 });
-it('uses at most 60 hooked elements per scene and no filter or mask', () => {
+it('writes at most 60 attributes in any 60 fps frame and uses no filter or mask', () => {
   const svg = stills(file)[0];
-  expect(svg.querySelectorAll('*').filter((el) => Object.keys(el.attributes).some((a) => a.startsWith('data-') && a.slice(5) in HOOKS)).length).toBeLessThanOrEqual(60);
+  let writes = 0;
+  const paint = painter({ querySelectorAll: (q: string) => svg.querySelectorAll(q).map((el) => ({ getAttribute: (a: string) => el.getAttribute(a), setAttribute: (a: string, v: string) => { writes++; el.setAttribute(a, v); } })) });
+  paint(stateAt(0));
+  for (let step = 0; step < 5; step++)
+    for (let f = 1, n = Math.round(CLIP[step] * 60); f <= n; f++) {
+      writes = 0;
+      paint(stateAt(step + f / n));
+      expect(writes, `t ${(step + f / n).toFixed(3)}`).toBeLessThanOrEqual(60);
+    }
   expect(svg.querySelectorAll('filter, mask, [filter], [mask]')).toHaveLength(0);
 });
 it('stays light: the gzipped page is at most 30 KB', () => {
@@ -87,9 +97,10 @@ it('stays light: the gzipped page is at most 30 KB', () => {
 });
 ```
 
-  (import `gzipSync` from `node:zlib`). Expected count: 39 hook names, about 58 hooked elements. If it
-  passes 60, do not raise the cap; report the count and the hooks that repeat most, and stop (status
-  DONE_WITH_CONCERNS) so the controller rules on which to merge.
+  (import `gzipSync` from `node:zlib`, `painter` from src/components/scene/paint.ts, `CLIP` from
+  `src/components/scene/scroll.ts`). The cap is spec §7's "about 60 hooks change per frame"; after Task 3 the
+  busiest frame writes 17 (t 2.373), with 77 hooked elements in all. If a frame passes 60, report the
+  frame and the hooks it writes, and stop (DONE_WITH_CONCERNS).
   - `tests/dist/how.test.ts`: the van-crate count per still follows the model (`STILLS[k].vanCrates`); the
     QC sign reads "QC 10x" (en) and "质检 10x" (zh) in every still.
 - [ ] **Step 2: Run to see them fail.** `npm run build && npx vitest run tests/dist tests/unit/steps.test.ts`.
@@ -97,9 +108,14 @@ it('stays light: the gzipped page is at most 30 KB', () => {
   `scene.factory`).
 - [ ] **Step 4: Draw Inspection and Van; finish Scene.astro.**
 - [ ] **Step 5: Run everything.** `npm run verify` — PASS, quality counts unchanged; then
-  `npx playwright test tests/e2e/weight.spec.ts --project=desktop` — PASS. If the gzipped page passes 30 KB,
-  move the static repeated drawings (the busts, the palms) into Defs as `<symbol id="scene-…">` and draw
-  them with `<use href="#scene-…">`; hooks never go inside a symbol. Look at all five stills in a browser at
+  `npx playwright test tests/e2e/weight.spec.ts --project=desktop` — PASS. Whatever the weight, move the static drawing that
+  repeats in every still into Defs as `<symbol id="scene-…">` drawn with `<use href="#scene-…">` (ruling of
+  2026-11-17: Task 3 left the page at 28.3 KB gzipped, and each still is 44.6 KB raw, past gzip's 32 KB
+  window, so later stills barely compress against earlier ones). Candidates: each house's walls, roof, tiles,
+  fascia, porch, window frame and curtains, pot and plinth; the busts; the factory body and sawtooth roof; the
+  ground, road and palms; the inspection body. Hooks never go inside a symbol, and a symbol never holds an
+  element that one still shows differently from another. Report raw and gzipped size before and after.
+  Look at all five stills in a browser at
   phone width (`npx astro preview`; stop it by pid): van label readable both ways, the sign's lens lit only in
   still 4, the tick in still 4, the driver with a crate in front of the factory in still 5.
 - [ ] **Step 6: Commit** `feat(scene): inspection house and van; the finished scene`.

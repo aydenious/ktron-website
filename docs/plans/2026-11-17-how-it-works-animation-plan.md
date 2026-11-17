@@ -100,6 +100,10 @@ Per-task files (each is one task's full brief):
   visible gain).
 - R18. `snapProgress` takes the scroll direction: coming back up from below the pin, the end holds until 0.2
   band short of it, then P_5 (otherwise a small upward scroll from the end snaps back down).
+- R19. The painting cap counts attribute writes per 60 fps frame (at most 60, spec §7), not hooked elements;
+  after Task 3 the busiest frame writes 17 with 77 hooked elements.
+- R20. Task 4 moves the static drawing repeated in every still into `<symbol>`s (spec §7's fallback), since
+  Task 3 left the page at 28.3 KB gzipped with the inspection house and the van still to come.
 
 ### Hooks (from `src/components/scene/view.ts`) and the part that draws each
 
