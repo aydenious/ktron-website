@@ -1,0 +1,61 @@
+/* Every class the "How it works" drawing uses; global, imported once by Scene.astro and Defs.astro. Colours come
+   only from --scene-* artwork tokens or the brand tokens in src/styles/tokens.css. Fills sc-*, strokes sc-stroke-*,
+   gradient stops sc-stop-*, text text-*. */
+
+.scene text { font-family: 'Manrope Variable', system-ui, sans-serif; }
+
+/* brand colours */
+.sc-gold { fill: var(--gold); }
+.sc-gold-soft { fill: var(--gold-soft); }
+.sc-navy { fill: var(--navy); }
+.sc-navy-2 { fill: var(--navy-2); }
+.sc-white { fill: var(--white); }
+.sc-slate { fill: var(--slate); }
+.sc-grey-1 { fill: var(--grey-1); }
+.sc-grey-2 { fill: var(--grey-2); }
+.sc-grey-3 { fill: var(--grey-3); }
+.sc-stroke-gold { stroke: var(--gold); }
+
+/* sky */
+.sc-sun { fill: var(--scene-sun); }
+.sc-sun-low { fill: var(--scene-sun-low); }
+.sc-night-1 { fill: var(--scene-sky-night-1); }
+.sc-stop-day-1 { stop-color: var(--scene-sky-day-1); }
+.sc-stop-day-2 { stop-color: var(--scene-sky-day-2); }
+.sc-stop-day-3 { stop-color: var(--scene-sky-day-3); }
+.sc-stop-sunset-1 { stop-color: var(--scene-sky-sunset-1); }
+.sc-stop-sunset-2 { stop-color: var(--scene-sky-sunset-2); }
+.sc-stop-sunset-3 { stop-color: var(--scene-sky-sunset-3); }
+.sc-stop-sunset-4 { stop-color: var(--scene-sky-sunset-4); }
+.sc-stop-night-1 { stop-color: var(--scene-sky-night-1); }
+.sc-stop-night-2 { stop-color: var(--navy); }
+.sc-stop-night-3 { stop-color: var(--scene-sky-night-3); }
+.sc-stop-dawn-1 { stop-color: var(--scene-sky-dawn-1); }
+.sc-stop-dawn-2 { stop-color: var(--scene-sky-dawn-2); }
+.sc-stop-dawn-3 { stop-color: var(--scene-sky-dawn-3); }
+.sc-stop-dawn-4 { stop-color: var(--scene-sky-dawn-4); }
+.sc-stop-sun { stop-color: var(--scene-sun); }
+.sc-stop-gold-soft { stop-color: var(--gold-soft); }
+.sc-stop-lit { stop-color: var(--scene-lit); }
+
+/* ground */
+.sc-hill-day { fill: var(--scene-hill-day); }
+.sc-hill-dusk { fill: var(--scene-hill-dusk); }
+.sc-hill-night { fill: var(--scene-hill-night); }
+.sc-stroke-trunk { stroke: var(--scene-trunk); }
+.sc-stroke-palm-day { stroke: var(--scene-palm-day); }
+.sc-stroke-palm-dusk { stroke: var(--scene-palm-dusk); }
+.sc-stroke-palm-night { stroke: var(--scene-palm-night); }
+.sc-verge { fill: var(--scene-verge); }
+.sc-road { fill: var(--scene-road); }
+.sc-grass { fill: var(--scene-grass); }
+
+/* factory */
+.sc-glass { fill: var(--scene-glass); }
+
+/* Text: each class names one TEXT pair in tests/unit/contrast.test.ts (the house number and shirt print are decoration). */
+.text-factory { fill: var(--white); }
+.text-van { fill: var(--navy); }
+.text-qc { fill: var(--navy-2); }
+.text-house-no { fill: var(--navy-2); opacity: 0.6; }
+.text-shirt { fill: var(--gold); }

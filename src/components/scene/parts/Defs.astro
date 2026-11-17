@@ -1,0 +1,37 @@
+---
+// Gradients and clip paths, drawn once per page: the five stills and the stage clone only point at them.
+import '../scene.css';
+import { HOUSE_X } from '../layout';
+const linear = (id: string, stops: string[]) => ({ id, stops: stops.map((c, k) => ({ c, at: (k / (stops.length - 1)).toFixed(2) })) });
+const SKIES = [
+  linear('day', ['day-1', 'day-2', 'day-3']),
+  linear('sunset', ['sunset-1', 'sunset-2', 'sunset-3', 'sunset-4']),
+  linear('night', ['night-1', 'night-2', 'night-3']),
+  linear('dawn', ['dawn-1', 'dawn-2', 'dawn-3', 'dawn-4']),
+];
+// [id, stop class, opacity at the centre]
+const GLOWS = [['sun-halo', 'sun', 0.35], ['moon-halo', 'gold-soft', 0.25], ['lit-glow', 'lit', 0.6], ['lens-glow', 'gold-soft', 0.9]] as const;
+---
+<svg class="visually-hidden" width="0" height="0" aria-hidden="true" focusable="false">
+  <defs>
+    {SKIES.map((g) => (
+      <linearGradient id={`scene-sky-${g.id}`} x1="0" y1="0" x2="0" y2="1">
+        {g.stops.map((s) => <stop offset={s.at} class={`sc-stop-${s.c}`} />)}
+      </linearGradient>
+    ))}
+    {GLOWS.map(([id, stop, centre]) => (
+      <radialGradient id={`scene-${id}`}>
+        <stop offset="0" class={`sc-stop-${stop}`} stop-opacity={centre} />
+        <stop offset="1" class={`sc-stop-${stop}`} stop-opacity="0" />
+      </radialGradient>
+    ))}
+    <radialGradient id="scene-headlight" cx="0" cy="0.5" r="1">
+      <stop offset="0" class="sc-stop-gold-soft" stop-opacity="0.7" />
+      <stop offset="1" class="sc-stop-gold-soft" stop-opacity="0" />
+    </radialGradient>
+    {HOUSE_X.map((x, i) => (
+      <clipPath id={`scene-clip-window-${i}`}><rect x={x - 48} y="232" width="42" height="32" /></clipPath>
+    ))}
+    <clipPath id="scene-clip-qc"><rect x="826" y="228" width="72" height="44" /></clipPath>
+  </defs>
+</svg>

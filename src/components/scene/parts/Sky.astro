@@ -1,0 +1,28 @@
+---
+// The sky is fixed to the view (800 × 320), so it is drawn outside the world group.
+import { bind } from '../view';
+import type { SceneState } from '../steps';
+interface Props { s: SceneState }
+const { s } = Astro.props;
+const STARS = [[40, 40], [130, 80], [220, 30], [310, 70], [420, 40], [520, 90], [610, 35], [700, 75], [770, 45], [90, 125], [660, 130], [360, 110], [560, 140], [470, 20], [750, 120], [170, 130]];
+---
+<rect width="800" height="320" fill="url(#scene-sky-day)" />
+<rect width="800" height="320" fill="url(#scene-sky-sunset)" {...bind('sunset', s)} />
+<rect width="800" height="320" fill="url(#scene-sky-dawn)" {...bind('dawn', s)} />
+<rect width="800" height="320" fill="url(#scene-sky-night)" {...bind('night', s)} />
+<g {...bind('sun', s)}>
+  <circle r="42" fill="url(#scene-sun-halo)" />
+  <circle class="sc-sun" r="26" />
+  <circle class="sc-sun-low" r="26" {...bind('dusk', s, 2)} />
+</g>
+<g {...bind('moon', s)}>
+  <g {...bind('moon-rise', s)}>
+    <g transform="translate(150 70)">
+      <circle r="40" fill="url(#scene-moon-halo)" />
+      <path class="sc-gold-soft" d="M -3.55 -21.72 A 22 22 0 1 0 19.55 10.08 A 20 20 0 0 1 -3.55 -21.72 Z" />
+    </g>
+  </g>
+</g>
+<g class="sc-white" {...bind('stars', s)}>
+  {STARS.map(([x, y], k) => <circle data-amb="twinkle" cx={x} cy={y} r={1.2 + (k % 3) * 0.6} opacity={0.6 + (k % 2) * 0.4} />)}
+</g>

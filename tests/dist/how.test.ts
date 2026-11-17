@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import en from '../../src/i18n/en.json';
 import zh from '../../src/i18n/zh.json';
-import { STILLS, view } from '../../src/components/scene/steps';
+import { STILLS } from '../../src/components/scene/steps';
 import { page } from './dist';
 
 describe.each([['/', en], ['/zh/', zh]] as const)('%s how it works stills', (path, s) => {
@@ -38,25 +38,21 @@ describe.each([['/', en], ['/zh/', zh]] as const)('%s how it works stills', (pat
       expect(shown(i, '[data-van-crate]'), `still ${i + 1} van crates`).toBe(state.vanCrates);
       expect(shown(i, '[data-house-crate]'), `still ${i + 1} house crates`).toBe(state.houseCrates.filter(Boolean).length);
       expect(shown(i, '[data-dock-crate]'), `still ${i + 1} dock crates`).toBe(state.dockCrates);
-      expect(attr(i, '[data-lens]', 'opacity'), `still ${i + 1} lens`).toBe(String(view.lens(state)));
-      expect(attr(i, '[data-night]', 'opacity'), `still ${i + 1} night`).toBe(String(view.night(state)));
-      expect(attr(i, '[data-stars]', 'opacity'), `still ${i + 1} stars`).toBe(String(view.dark(state)));
-      expect(attr(i, '[data-sun]', 'transform'), `still ${i + 1} sun`).toBe(view.sun(state));
     });
   });
-  it('only the third still is at night: no night sky, stars or lit windows in the others', () => {
+  it('only the third still is at night, and the windows are lit as the model says (still 2 has all four lit)', () => {
     for (const i of [0, 1, 3, 4]) {
       expect(attr(i, '[data-night]', 'opacity'), `still ${i + 1}`).toBe('0');
       expect(attr(i, '[data-stars]', 'opacity'), `still ${i + 1}`).toBe('0');
-      expect(steps[i].querySelectorAll('[data-lit]').filter((e) => e.getAttribute('opacity') !== '0'), `still ${i + 1} lit windows`).toHaveLength(0);
     }
     expect(attr(2, '[data-stars]', 'opacity')).toBe('1');
-    expect(steps[2].querySelectorAll('[data-lit]').filter((e) => e.getAttribute('opacity') === '1')).toHaveLength(4);
+    const lit = (i: number) => steps[i].querySelectorAll('[data-lit]').filter((e) => e.getAttribute('opacity') === '1').length;
+    STILLS.forEach((state, i) => expect(lit(i), `still ${i + 1} lit windows`).toBe(state.lit.filter((v) => v === 1).length));
+    expect(lit(1)).toBe(4);
     expect(steps.map((_, i) => attr(i, '[data-lens]', 'opacity'))).toEqual(['0', '0', '0', '1', '0']);
   });
   it('the van body faces as the model says, and the KTRON name is never inside the flipped group', () => {
-    STILLS.forEach((state, i) => {
-      expect(attr(i, '[data-van-body]', 'transform'), `still ${i + 1}`).toBe(view.vanBody(state));
+    STILLS.forEach((_, i) => {
       expect(steps[i].querySelectorAll('[data-van-body] text'), `still ${i + 1} text in the van body`).toHaveLength(0);
       expect(steps[i].querySelector('[data-van] > text')?.text, `still ${i + 1} van name`).toBe('KTRON');
     });

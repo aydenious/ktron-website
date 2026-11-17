@@ -1,32 +1,10 @@
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { refreshWhenFontsSettle } from './fonts';
-import { STEPS, stateAt, stepOf, view, type SceneState } from './steps';
+import { painter } from './paint';
+import { STEPS, stateAt, stepOf } from './steps';
 
 gsap.registerPlugin(ScrollTrigger);
-
-/** Returns a function that paints one moment of the scene into a drawing made by Scene.astro. */
-function painter(svg: SVGSVGElement): (s: SceneState) => void {
-  const one = (hook: string) => svg.querySelector(`[data-${hook}]`)!;
-  const indexed = (hook: string) =>
-    [...svg.querySelectorAll(`[data-${hook}]`)].map((el) => [el, Number(el.getAttribute(`data-${hook}`))] as const);
-  const world = one('world'), van = one('van'), body = one('van-body');
-  const sun = one('sun'), night = one('night'), lens = one('lens');
-  const dark = [one('stars'), ...svg.querySelectorAll('[data-lit]')];
-  const houseCrates = indexed('house-crate'), vanCrates = indexed('van-crate'), dockCrates = indexed('dock-crate');
-  return (s) => {
-    world.setAttribute('transform', view.world(s));
-    van.setAttribute('transform', view.van(s));
-    body.setAttribute('transform', view.vanBody(s));
-    sun.setAttribute('transform', view.sun(s));
-    night.setAttribute('opacity', String(view.night(s)));
-    lens.setAttribute('opacity', String(view.lens(s)));
-    for (const el of dark) el.setAttribute('opacity', String(view.dark(s)));
-    for (const [el, i] of houseCrates) el.setAttribute('visibility', view.houseCrate(s, i));
-    for (const [el, j] of vanCrates) el.setAttribute('visibility', view.vanCrate(s, j));
-    for (const [el, j] of dockCrates) el.setAttribute('visibility', view.dockCrate(s, j));
-  };
-}
 
 /** How the reader got here, decided by the loader before the script was fetched. */
 interface Arrival {

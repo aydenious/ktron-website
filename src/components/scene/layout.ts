@@ -25,6 +25,9 @@ export const FRONT_X = 190; // in front of the factory between the stack and the
 /** The cab door: the van's nose end, so it moves with the facing. */
 export const cabX = (facing: 1 | -1) => FACTORY_X + 38 * facing;
 
+/** Crate k's top-left corner on the factory dock (crates are 20 × 13). */
+export const DOCK_SLOTS: readonly (readonly [x: number, y: number])[] = [[132, 281], [154, 281], [143, 268], [143, 255]];
+
 /** The roller door's top edge: it rolls up into the fascia. */
 export const ROLLER_TOP = 236;
 

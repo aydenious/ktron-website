@@ -1,0 +1,33 @@
+---
+// Hills, palms and the road, in world coordinates. Each hill and palm set is drawn three times (day, dusk,
+// night); the warm and dark copies fade in over the day one.
+import { bind } from '../view';
+import type { SceneState } from '../steps';
+interface Props { s: SceneState }
+const { s } = Astro.props;
+const TONES = [['day', null], ['dusk', 'dusk'], ['night', 'dark']] as const;
+const HILLS = 'M0 262 Q120 212 260 246 T560 236 T860 232 T1040 244 V320 H0 Z';
+const n = (v: number) => Number(v.toFixed(2));
+// [x, y, scale]: the trunk rises 90 × scale from y + 90 × scale; seven fronds fan out from (x, y).
+const PALMS = [[415, 120, 0.9], [652, 116, 1]] as const;
+const FRONDS = [[-34, 6], [-26, -14], [-6, -24], [18, -20], [32, 2], [24, 14], [-20, 16]];
+const trunk = (x: number, y: number, k: number) => `M${x - 6} ${n(y + 90 * k)} q-6 ${n(-50 * k)} 6 ${n(-90 * k)}`;
+const frond = (x: number, y: number, k: number, [dx, dy]: number[]) => `M${x} ${y} q${n(dx * k * 0.5)} ${n(-14 * k)} ${n(dx * k)} ${n(dy * k)}`;
+const DASHES = Array.from({ length: 20 }, (_, i) => 10 + 52 * i);
+---
+{TONES.map(([tone, hook]) => <path class={`sc-hill-${tone}`} d={HILLS} {...(hook ? bind(hook, s, 0) : {})} />)}
+{TONES.map(([tone, hook]) => (
+  <g fill="none" stroke-linecap="round" {...(hook ? bind(hook, s, 1) : {})}>
+    {PALMS.map(([x, y, k]) => (
+      <>
+        <path class="sc-stroke-trunk" stroke-width={n(6 * k)} d={trunk(x, y, k)} />
+        {FRONDS.map((f) => <path class={`sc-stroke-palm-${tone}`} stroke-width={n(5 * k)} d={frond(x, y, k, f)} />)}
+      </>
+    ))}
+  </g>
+))}
+<rect class="sc-verge" y="300" width="1040" height="18" />
+<rect class="sc-road" y="316" width="1040" height="38" />
+{DASHES.map((x) => <rect class="sc-white" x={x} y="333" width="26" height="3" />)}
+<rect class="sc-grey-2" y="352" width="1040" height="7" />
+<rect class="sc-grass" y="359" width="1040" height="41" />

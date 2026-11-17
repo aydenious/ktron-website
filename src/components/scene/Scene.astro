@@ -1,96 +1,63 @@
 ---
-import { FACTORY_X, HOUSE_X, INSPECT_X, ROAD_Y, VIEW_H, VIEW_W, WORLD_W, view, type SceneState } from './steps';
-import { t, type Lang } from '../../i18n';
+import './scene.css';
+import Factory from './parts/Factory.astro';
+import Ground from './parts/Ground.astro';
+import Sky from './parts/Sky.astro';
+import { HOUSE_X, INSPECT_X, VIEW_H, VIEW_W, type SceneState } from './steps';
+import { bind } from './view';
+import type { Lang } from '../../i18n';
 interface Props { state: SceneState; lang: Lang }
 const { state: s, lang } = Astro.props;
-const F = FACTORY_X;
 const I = INSPECT_X;
-const STARS = [[40, 40], [130, 80], [220, 30], [310, 70], [420, 40], [520, 90], [610, 35], [700, 75], [790, 45], [880, 95], [1000, 30]];
 const SLOTS = [0, 1, 2, 3];
-const FACTORY_CRATES = [[F - 80, 282], [F - 56, 282], [F - 80, 264], [F - 56, 264]];
-const route = `M ${F} ${ROAD_Y + 3} H ${I + 80} C ${I + 130} ${ROAD_Y + 3} ${I + 130} 385 ${I + 80} 385 `
-  + `H ${F - 60} C ${F - 110} 385 ${F - 110} ${ROAD_Y + 3} ${F - 60} ${ROAD_Y + 3} Z`;
 ---
 <svg class="scene" viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} width={VIEW_W} height={VIEW_H} aria-hidden="true" focusable="false">
-  <g data-world transform={view.world(s)}>
-    <rect class="sky" width={WORLD_W} height="300" />
-    <circle data-sun class="gold" r="28" transform={view.sun(s)} />
-    <rect data-night class="navy" width={WORLD_W} height="300" opacity={view.night(s)} />
-    <g data-stars class="white" opacity={view.dark(s)}>
-      {STARS.map(([x, y]) => <circle cx={x} cy={y} r="2" />)}
-      <circle class="gold-soft" cx="960" cy="70" r="16" />
-    </g>
-    <rect class="grey-2" y="300" width={WORLD_W} height="100" />
-    <rect class="grey-3" y={ROAD_Y - 14} width={WORLD_W} height="34" />
-    <path class="stroke-gold" d={route} fill="none" stroke-width="3" stroke-dasharray="10 10" />
-
-    <!-- the customer's factory: generic, no logo -->
-    <path class="navy-2" d={`M${F - 90} 300 V200 L${F - 50} 175 V200 L${F - 10} 175 V200 L${F + 30} 175 V200 H${F + 90} V300 Z`} />
-    <rect class="navy-2" x={F + 50} y="150" width="16" height="50" />
-    <rect class="navy" x={F + 20} y="250" width="50" height="50" />
-    <text class="white" x={F - 30} y="236" text-anchor="middle" font-size="15" font-weight="700"
-      font-family="'Manrope Variable', system-ui, sans-serif">{t(lang, 'scene.factory')}</text>
-    {FACTORY_CRATES.map(([x, y], j) => (
-      <g data-dock-crate={j} visibility={view.dockCrate(s, j)}>
-        <rect class="gold" x={x} y={y} width="22" height="18" /><rect class="navy" x={x} y={y + 7} width="22" height="3" opacity="0.25" />
-      </g>
-    ))}
+  <Sky s={s} />
+  <g {...bind('world', s)}>
+    <Ground s={s} />
+    <Factory s={s} lang={lang} />
 
     <!-- four terrace houses -->
     {HOUSE_X.map((x, i) => (
       <g>
-        <rect class="white" x={x - 60} y="215" width="120" height="85" />
-        <path class="navy" d={`M${x - 66} 218 L${x} 182 L${x + 66} 218 Z`} />
-        <rect class="grey-3" x={x - 44} y="232" width="28" height="22" />
-        <rect class="grey-3" x={x + 16} y="232" width="28" height="22" />
-        <g data-lit class="gold" opacity={view.dark(s)}>
+        <rect class="sc-white" x={x - 60} y="215" width="120" height="85" />
+        <path class="sc-navy" d={`M${x - 66} 218 L${x} 182 L${x + 66} 218 Z`} />
+        <rect class="sc-grey-3" x={x - 44} y="232" width="28" height="22" />
+        <rect class="sc-grey-3" x={x + 16} y="232" width="28" height="22" />
+        <g class="sc-gold" {...bind('lit', s, i)}>
           <rect x={x - 44} y="232" width="28" height="22" /><rect x={x + 16} y="232" width="28" height="22" />
         </g>
-        <rect class="navy-2" x={x - 12} y="262" width="24" height="38" />
-        <g data-house-crate={i} visibility={view.houseCrate(s, i)}>
-          <rect class="gold" x={x + 18} y="282" width="22" height="18" /><rect class="navy" x={x + 18} y="289" width="22" height="3" opacity="0.25" />
+        <rect class="sc-navy-2" x={x - 12} y="262" width="24" height="38" />
+        <g {...bind('house-crate', s, i)}>
+          <rect class="sc-gold" x={x + 18} y="282" width="22" height="18" /><rect class="sc-navy" x={x + 18} y="289" width="22" height="3" opacity="0.25" />
         </g>
       </g>
     ))}
 
     <!-- the inspection house and its magnifier sign -->
-    <rect class="white" x={I - 60} y="210" width="120" height="90" />
-    <path class="navy" d={`M${I - 66} 213 L${I} 176 L${I + 66} 213 Z`} />
-    <rect class="navy-2" x={I - 14} y="258" width="28" height="42" />
-    <rect class="navy-2" x={I - 2} y="146" width="4" height="32" />
-    <circle data-lens class="gold-soft" cx={I} cy="128" r="34" opacity={view.lens(s)} />
-    <circle class="navy-2 stroke-gold" cx={I} cy="128" r="18" stroke-width="6" />
-    <path class="stroke-gold" d={`M${I + 13} ${141} L${I + 26} ${154}`} stroke-width="7" stroke-linecap="round" />
+    <rect class="sc-white" x={I - 60} y="210" width="120" height="90" />
+    <path class="sc-navy" d={`M${I - 66} 213 L${I} 176 L${I + 66} 213 Z`} />
+    <rect class="sc-navy-2" x={I - 14} y="258" width="28" height="42" />
+    <rect class="sc-navy-2" x={I - 2} y="146" width="4" height="32" />
+    <circle class="sc-gold-soft" cx={I} cy="128" r="34" {...bind('lens', s)} />
+    <circle class="sc-navy-2 sc-stroke-gold" cx={I} cy="128" r="18" stroke-width="6" />
+    <path class="sc-stroke-gold" d={`M${I + 13} ${141} L${I + 26} ${154}`} stroke-width="7" stroke-linecap="round" />
 
     <!-- the van: the body flips with direction, the name and crates do not -->
-    <g data-van transform={view.van(s)}>
-      <g data-van-body transform={view.vanBody(s)}>
-        <rect class="white" x="-36" y="-52" width="72" height="44" rx="4" />
-        <path class="white" d="M36 -40 H52 L62 -24 V-8 H36 Z" />
-        <path class="navy-2" d="M40 -36 H50 L57 -24 H40 Z" />
-        <circle class="slate" cx="-20" cy="-6" r="9" />
-        <circle class="slate" cx="46" cy="-6" r="9" />
+    <g {...bind('van', s)}>
+      <g {...bind('van-body', s)}>
+        <rect class="sc-white" x="-36" y="-52" width="72" height="44" rx="4" />
+        <path class="sc-white" d="M36 -40 H52 L62 -24 V-8 H36 Z" />
+        <path class="sc-navy-2" d="M40 -36 H50 L57 -24 H40 Z" />
+        <circle class="sc-slate" cx="-20" cy="-6" r="9" />
+        <circle class="sc-slate" cx="46" cy="-6" r="9" />
       </g>
-      <text class="navy" x="0" y="-24" text-anchor="middle" font-size="15" font-weight="800"
-        font-family="'Manrope Variable', system-ui, sans-serif">KTRON</text>
+      <text class="text-van" x="0" y="-24" text-anchor="middle" font-size="15" font-weight="800">KTRON</text>
       {SLOTS.map((j) => (
-        <g data-van-crate={j} visibility={view.vanCrate(s, j)}>
-          <rect class="gold" x={-34 + j * 17} y="-66" width="15" height="13" />
+        <g {...bind('van-crate', s, j)}>
+          <rect class="sc-gold" x={-34 + j * 17} y="-66" width="15" height="13" />
         </g>
       ))}
     </g>
   </g>
 </svg>
-<style>
-  /* The drawing takes every colour from tokens.css (PRD §7): no raw value in the markup. */
-  .sky { fill: var(--grey-1); }
-  .gold { fill: var(--gold); }
-  .gold-soft { fill: var(--gold-soft); }
-  .navy { fill: var(--navy); }
-  .navy-2 { fill: var(--navy-2); }
-  .white { fill: var(--white); }
-  .grey-2 { fill: var(--grey-2); }
-  .grey-3 { fill: var(--grey-3); }
-  .slate { fill: var(--slate); }
-  .stroke-gold { stroke: var(--gold); }
-</style>
