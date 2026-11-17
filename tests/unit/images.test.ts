@@ -1,9 +1,8 @@
 import { readFileSync } from 'node:fs';
-import sharp from 'sharp';
 import { describe, expect, it } from 'vitest';
-import { PHOTO_IDS } from '../../src/assets/photos';
+import { widthsFor } from '../../src/assets/photos';
 import { SOURCES } from '../helpers/css';
-import { srcsetTooWide, widthsTooWide } from '../helpers/images';
+import { picturesWithoutWidthsFor, srcsetTooWide } from '../helpers/images';
 
 describe('the srcset width check', () => {
   const html = (w: number) => `<picture><source srcset="/a-480.avif 480w, /a-${w}.avif ${w}w"><img alt="Hero" srcset="/a-${w}.jpg ${w}w"></picture>`;
@@ -18,24 +17,42 @@ describe('the srcset width check', () => {
   });
 });
 
-describe('the literal widths check', () => {
-  const real = { hero: 1280, quality: 2000 };
+describe('widthsFor', () => {
+  const photo = (width: number) => ({ src: '/x.jpg', width, height: width, format: 'jpg' as const });
+  it('keeps steps at or below the photo width', () => {
+    expect(widthsFor(photo(2000), [480, 800, 1200])).toEqual([480, 800, 1200]);
+  });
+  it('caps wider steps at the photo width and drops the duplicates', () => {
+    expect(widthsFor(photo(918), [480, 800, 1200])).toEqual([480, 800, 918]);
+    expect(widthsFor(photo(389), [400, 800])).toEqual([389]);
+  });
+});
+
+describe('every Picture takes its widths from widthsFor', () => {
   const one = (tag: string) => [{ file: 'src/components/X.astro', text: tag }];
-  it('flags a widths array above its photo, named or dynamic', () => {
-    expect(widthsTooWide(one('<Picture src={photos.hero} widths={[480, 1600]} />'), real).tooWide)
-      .toEqual(['src/components/X.astro: widths up to 1600w > 1280']);
-    expect(widthsTooWide(one('<Picture src={photos[id]} widths={[400, 2000]} />'), real).tooWide)
-      .toEqual(['src/components/X.astro: widths up to 2000w > 1280']);
+  it('flags a literal widths array and a missing one', () => {
+    expect(picturesWithoutWidthsFor(one('<Picture src={photos.hero} widths={[480, 1600]} />')).bad)
+      .toEqual(['src/components/X.astro: <Picture src={photos.hero} widths={[480, 1600]} />']);
+    expect(picturesWithoutWidthsFor(one('<Picture src={photos.hero} />')).bad).toHaveLength(1);
   });
-  it('accepts widths at or below the photo width', () => {
-    expect(widthsTooWide(one('<Picture src={photos.quality} widths={[480, 1200]} />'), real)).toEqual({ checked: 1, tooWide: [] });
+  it('flags widthsFor of another photo, and a Picture that is not self-closing', () => {
+    expect(picturesWithoutWidthsFor(one('<Picture src={photos.hero} widths={widthsFor(photos.quality, [480])} />')).bad).toHaveLength(1);
+    expect(picturesWithoutWidthsFor(one('<Picture src={photos.hero} widths={[1600]}></Picture>')).bad).toHaveLength(1);
+    expect(picturesWithoutWidthsFor(one('<Picture src={photos.hero} widths={widthsFor(photos.hero, [480])}></Picture>\n<Picture src={photos.hero} widths={[1600]} />')))
+      .toMatchObject({ checked: 2, bad: [expect.stringContaining('[1600]')] });
   });
-  it('every literal widths array in src/components is at most its photo width', async () => {
-    const realWidths = Object.fromEntries(await Promise.all(PHOTO_IDS.map(async (id) =>
-      [id, (await sharp(`src/assets/photos/${id}.jpg`).metadata()).width!])));
+  it('reads past an arrow function inside an attribute', () => {
+    expect(picturesWithoutWidthsFor(one('<Picture src={photos.hero} onload={() => 1} widths={widthsFor(photos.hero, [480])} />')))
+      .toEqual({ checked: 1, bad: [] });
+  });
+  it('accepts widthsFor, on one line or several', () => {
+    expect(picturesWithoutWidthsFor(one('<Picture src={photos[id]}\n  widths={widthsFor(photos[id], [400, 800])} />')))
+      .toEqual({ checked: 1, bad: [] });
+  });
+  it('holds for every Picture in src/', () => {
     const sources = SOURCES.filter((f) => f.endsWith('.astro')).map((f) => ({ file: f, text: readFileSync(f, 'utf8') }));
-    const { checked, tooWide } = widthsTooWide(sources, realWidths);
+    const { checked, bad } = picturesWithoutWidthsFor(sources);
     expect(checked).toBeGreaterThanOrEqual(3);
-    expect(tooWide).toEqual([]);
+    expect(bad).toEqual([]);
   });
 });

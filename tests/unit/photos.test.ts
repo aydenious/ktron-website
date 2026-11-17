@@ -62,10 +62,12 @@ describe('photos (gate 3 and PRD §4.5)', () => {
       expect(zh[key]?.trim(), `zh ${key}`).toBeTruthy();
     }
   });
-  it.each(PHOTO_IDS)('%s is a clean JPEG, 1200–2000 px wide, with no metadata', async (id) => {
+  // 380, not 1200: the owner's photos are 1248 px sheets, and two card photos are panels cut from one of
+  // them. widthsFor keeps every srcset step at or below a photo's real width, so none is upscaled.
+  it.each(PHOTO_IDS)('%s is a clean JPEG, 380–2000 px wide, with no metadata', async (id) => {
     const m = await sharp(`${DIR}/${id}.jpg`).metadata();
     expect(m.format).toBe('jpeg');
-    expect(m.width).toBeGreaterThanOrEqual(1200);
+    expect(m.width).toBeGreaterThanOrEqual(380);
     expect(m.width).toBeLessThanOrEqual(2000);
     expect(m.exif).toBeUndefined();
     expect(m.xmp).toBeUndefined();

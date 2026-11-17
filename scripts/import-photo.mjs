@@ -4,7 +4,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import sharp from 'sharp';
 
-const IDS = ['hero', 'trimming', 'deflashing', 'inspection', 'sorting', 'rework', 'quality'];
+const IDS = ['hero', 'trimming', 'deflashing', 'inspection', 'sorting', 'quality'];
 const [id, file, source, author, licence] = process.argv.slice(2);
 if (!IDS.includes(id) || !file || !source || !author || !licence) {
   console.error('usage: import-photo.mjs <id> <file> <source-url> <author> <licence>');
@@ -13,7 +13,8 @@ if (!IDS.includes(id) || !file || !source || !author || !licence) {
 const input = sharp(file, { failOn: 'error', limitInputPixels: 60_000_000 });
 const { width, format } = await input.metadata();
 if (!['jpeg', 'png', 'webp'].includes(format)) throw new Error(`${file}: ${format} is not a photo format`);
-if (width < 1200) throw new Error(`${file}: ${width} px wide; need at least 1200`);
+// 380, not 1200: two card photos are panels cropped from one of the owner's 1248 px sheets (tests/unit/photos.test.ts)
+if (width < 380) throw new Error(`${file}: ${width} px wide; need at least 380`);
 await input.rotate().resize({ width: 2000, withoutEnlargement: true }).jpeg({ quality: 82, mozjpeg: true })
   .toFile(`src/assets/photos/${id}.jpg`);
 

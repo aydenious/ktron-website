@@ -1,7 +1,7 @@
 ---
 import { Picture } from 'astro:assets';
 import WhatsAppButton from './WhatsAppButton.astro';
-import { photos } from '../assets/photos';
+import { photos, widthsFor } from '../assets/photos';
 import { t, type Lang } from '../i18n';
 interface Props { lang: Lang }
 const { lang } = Astro.props;
@@ -17,12 +17,11 @@ const { lang } = Astro.props;
       </div>
     </div>
     <Picture src={photos.hero} alt={t(lang, 'photo.hero.alt')} formats={['avif', 'webp']}
-      widths={[480, 800, 1200]} sizes="(min-width: 960px) 50vw, 100vw"
+      widths={widthsFor(photos.hero, [480, 800, 1200])} sizes="(min-width: 960px) 50vw, 100vw"
       loading="eager" fetchpriority="high" class="photo" />
   </div>
 </section>
 <style>
-  /* No width above 1200: hero.jpg is 1280 px wide, so a wider step would upscale it. */
   .hero { background: var(--navy); color: var(--white); padding: 40px 0 56px; }
   .grid { display: grid; gap: 32px; align-items: center; }
   h1 { color: var(--white); font-size: clamp(1.9rem, 5.5vw, 3.2rem); font-weight: 800; }
