@@ -26,22 +26,22 @@ describe.each([['/', en], ['/zh/', zh]] as const)('%s how it works stills', (pat
     for (const n of [1, 2, 3, 4, 5]) expect(svg).not.toContain(s[`how.${n}` as keyof typeof s]);
   });
   it('each still shows its moment', () => {
-    expect(shown(0, '[data-van-crate]')).toBe(4);
+    expect(shown(0, '[data-van-crate]')).toBe(3);
     expect(shown(1, '[data-house-crate]')).toBe(4);
     expect(attr(2, '[data-night]', 'opacity')).toBe('0.85');
     expect(attr(3, '[data-lens]', 'opacity')).toBe('1');
     expect(attr(3, '[data-world]', 'transform')).toBe('translate(-240 0)');
-    expect(shown(4, '[data-factory-crate]')).toBe(4);
+    expect(shown(4, '[data-dock-crate]')).toBe(3);
   });
   it('each still shows what its model state says and nothing else', () => {
     STILLS.forEach((state, i) => {
       expect(shown(i, '[data-van-crate]'), `still ${i + 1} van crates`).toBe(state.vanCrates);
       expect(shown(i, '[data-house-crate]'), `still ${i + 1} house crates`).toBe(state.houseCrates.filter(Boolean).length);
-      expect(shown(i, '[data-factory-crate]'), `still ${i + 1} factory crates`).toBe(state.factoryCrates);
+      expect(shown(i, '[data-dock-crate]'), `still ${i + 1} dock crates`).toBe(state.dockCrates);
       expect(attr(i, '[data-lens]', 'opacity'), `still ${i + 1} lens`).toBe(String(view.lens(state)));
       expect(attr(i, '[data-night]', 'opacity'), `still ${i + 1} night`).toBe(String(view.night(state)));
       expect(attr(i, '[data-stars]', 'opacity'), `still ${i + 1} stars`).toBe(String(view.dark(state)));
-      expect(attr(i, '[data-sun]', 'opacity'), `still ${i + 1} sun`).toBe(String(view.sun(state)));
+      expect(attr(i, '[data-sun]', 'transform'), `still ${i + 1} sun`).toBe(view.sun(state));
     });
   });
   it('only the third still is at night: no night sky, stars or lit windows in the others', () => {

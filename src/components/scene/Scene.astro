@@ -14,7 +14,7 @@ const route = `M ${F} ${ROAD_Y + 3} H ${I + 80} C ${I + 130} ${ROAD_Y + 3} ${I +
 <svg class="scene" viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} width={VIEW_W} height={VIEW_H} aria-hidden="true" focusable="false">
   <g data-world transform={view.world(s)}>
     <rect class="sky" width={WORLD_W} height="300" />
-    <circle data-sun class="gold" cx="110" cy="70" r="28" opacity={view.sun(s)} />
+    <circle data-sun class="gold" r="28" transform={view.sun(s)} />
     <rect data-night class="navy" width={WORLD_W} height="300" opacity={view.night(s)} />
     <g data-stars class="white" opacity={view.dark(s)}>
       {STARS.map(([x, y]) => <circle cx={x} cy={y} r="2" />)}
@@ -31,7 +31,7 @@ const route = `M ${F} ${ROAD_Y + 3} H ${I + 80} C ${I + 130} ${ROAD_Y + 3} ${I +
     <text class="white" x={F - 30} y="236" text-anchor="middle" font-size="15" font-weight="700"
       font-family="'Manrope Variable', system-ui, sans-serif">{t(lang, 'scene.factory')}</text>
     {FACTORY_CRATES.map(([x, y], j) => (
-      <g data-factory-crate={j} visibility={view.factoryCrate(s, j)}>
+      <g data-dock-crate={j} visibility={view.dockCrate(s, j)}>
         <rect class="gold" x={x} y={y} width="22" height="18" /><rect class="navy" x={x} y={y + 7} width="22" height="3" opacity="0.25" />
       </g>
     ))}
