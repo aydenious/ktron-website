@@ -4,18 +4,36 @@ const widths = (srcset: string | undefined) => (srcset ?? '').split(',').map((e)
 
 type Source = { file: string; text: string };
 
+/** Each `<Picture ...>` opening tag, self-closing or not, read up to the `>` outside any `{...}` (so `=>` inside one doesn't end it). */
+function pictureTags(text: string): string[] {
+  const tags: string[] = [];
+  for (const m of text.matchAll(/<Picture\b/g)) {
+    let depth = 0;
+    let i = m.index;
+    for (; i < text.length; i++) {
+      if (text[i] === '{') depth++;
+      else if (text[i] === '}') depth--;
+      else if (text[i] === '>' && depth === 0) break;
+    }
+    tags.push(text.slice(m.index, i + 1));
+  }
+  return tags;
+}
+
 /**
- * Every `<Picture>` whose `widths` is not `widthsFor(...)`. widthsFor caps each step at the photo's
- * real width; a literal array (or a step list built some other way) can ask for more pixels than
- * the photo has, which Astro silently drops or upscales.
+ * Every `<Picture>` whose `widths` is not `widthsFor(<its own src>, ...)`. widthsFor caps each step at
+ * the photo's real width; a literal array, a missing widths, or widthsFor of another photo can ask
+ * for more pixels than the photo has, which Astro silently drops or upscales.
  */
 export function picturesWithoutWidthsFor(sources: Source[]): { checked: number; bad: string[] } {
   const bad: string[] = [];
   let checked = 0;
   for (const { file, text } of sources) {
-    for (const [tag] of text.matchAll(/<Picture\b[\s\S]*?\/>/g)) {
+    for (const tag of pictureTags(text)) {
       checked += 1;
-      if (!/\swidths=\{widthsFor\(/.test(tag)) bad.push(`${file}: ${tag.replace(/\s+/g, ' ').slice(0, 80)}`);
+      const src = tag.match(/\ssrc=\{([^}]+)\}/)?.[1].trim();
+      const widths = tag.match(/\swidths=\{widthsFor\(([^,]+),/)?.[1].trim();
+      if (!src || src !== widths) bad.push(`${file}: ${tag.replace(/\s+/g, ' ').slice(0, 80)}`);
     }
   }
   return { checked, bad };

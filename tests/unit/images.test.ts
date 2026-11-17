@@ -35,6 +35,16 @@ describe('every Picture takes its widths from widthsFor', () => {
       .toEqual(['src/components/X.astro: <Picture src={photos.hero} widths={[480, 1600]} />']);
     expect(picturesWithoutWidthsFor(one('<Picture src={photos.hero} />')).bad).toHaveLength(1);
   });
+  it('flags widthsFor of another photo, and a Picture that is not self-closing', () => {
+    expect(picturesWithoutWidthsFor(one('<Picture src={photos.hero} widths={widthsFor(photos.quality, [480])} />')).bad).toHaveLength(1);
+    expect(picturesWithoutWidthsFor(one('<Picture src={photos.hero} widths={[1600]}></Picture>')).bad).toHaveLength(1);
+    expect(picturesWithoutWidthsFor(one('<Picture src={photos.hero} widths={widthsFor(photos.hero, [480])}></Picture>\n<Picture src={photos.hero} widths={[1600]} />')))
+      .toMatchObject({ checked: 2, bad: [expect.stringContaining('[1600]')] });
+  });
+  it('reads past an arrow function inside an attribute', () => {
+    expect(picturesWithoutWidthsFor(one('<Picture src={photos.hero} onload={() => 1} widths={widthsFor(photos.hero, [480])} />')))
+      .toEqual({ checked: 1, bad: [] });
+  });
   it('accepts widthsFor, on one line or several', () => {
     expect(picturesWithoutWidthsFor(one('<Picture src={photos[id]}\n  widths={widthsFor(photos[id], [400, 800])} />')))
       .toEqual({ checked: 1, bad: [] });
