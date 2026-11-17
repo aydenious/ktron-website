@@ -7,7 +7,8 @@ import type { SceneState } from '../steps';
 import { t, type Lang } from '../../../i18n';
 interface Props { s: SceneState; lang: Lang }
 const { s, lang } = Astro.props;
-const SMOKE = [[204, 128, 8, 0.8], [214, 110, 11, 0.6], [230, 90, 15, 0.4]];
+// The column leans right but stays left of the camera's far edge: each puff, grown 1.6× and drifted 6 (scene.css), ends below 240.
+const SMOKE = [[203, 128, 8, 0.8], [205, 110, 11, 0.6], [207, 90, 15, 0.4]];
 ---
 {SMOKE.map(([cx, cy, r, op]) => <circle class="sc-white" data-amb="smoke" cx={cx} cy={cy} r={r} opacity={op} />)}
 <use href="#scene-factory" />

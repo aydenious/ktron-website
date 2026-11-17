@@ -1,5 +1,7 @@
 // Scene state → SVG attribute values. Every moving part of the drawing carries a `data-<hook>="<index>"`
 // attribute; the server drawing writes its first value with `bind`, and the painter rewrites it from HOOKS.
+// The painter writes only transform and opacity (the two a compositor animates), and `visibility`: the one discrete
+// attribute, a plain visible/hidden switch that is never tweened (tests/unit/view.test.ts holds the list).
 import { camera, DOOR, HINGE_DX, HOUSE_X, KERB, ROAD_Y, ROLLER_TOP, WALK_Y } from './layout';
 import type { SceneState } from './steps';
 

@@ -2,10 +2,12 @@
    only from --scene-* artwork tokens or the brand tokens in src/styles/tokens.css. Fills sc-*, strokes sc-stroke-*,
    gradient stops sc-stop-*, text text-*. */
 
-.scene text, symbol text { font-family: 'Manrope Variable', system-ui, sans-serif; }
+.scene text, symbol[id^='scene-'] text { font-family: 'Manrope Variable', system-ui, sans-serif; text-rendering: geometricPrecision; }
 
-/* The symbols hold the still drawing; a symbol clips to its own viewport unless told not to. */
-symbol { overflow: visible; }
+/* The symbols hold the still drawing; a symbol clips to its own viewport unless told not to. Only the scene's own symbols: a <use>
+   instance is styled by the rules that match the symbol where it is defined, which is outside .scene, so the
+   scope is the id prefix and not an ancestor. */
+symbol[id^='scene-'] { overflow: visible; }
 
 /* A hidden group hides everything in it, even a part that says visibility="visible" for itself (a hidden walker's arms and crate). */
 .scene [visibility='hidden'] * { visibility: hidden; }

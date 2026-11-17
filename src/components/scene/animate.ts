@@ -95,10 +95,12 @@ export function setup(section: HTMLElement, arrival: Arrival): void {
     addEventListener('scrollend', settle);
     arrival.whenOver(() => removeEventListener('scrollend', settle));
   }
-  if (reaim) linkTarget.scrollIntoView({ behavior: 'smooth', block: 'start' });
   requestAnimationFrame(() => {
     root.style.removeProperty('overflow-anchor');
     root.style.removeProperty('scroll-behavior');
+    // The growth above aborted the link's own scroll, and a scroll started while the two styles were still set dies
+    // within a frame (a scrollend there lands short), so the link is followed again only now, one frame later.
+    if (reaim) requestAnimationFrame(() => linkTarget.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   });
   section.dataset.ready = '';
 }

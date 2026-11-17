@@ -32,3 +32,11 @@ describe('ambient loops (spec §3, §7; ruling R12)', () => {
     for (const r of rulesOf(file).filter((x) => animates(x.decl))) expect(m![1], r.selector).toContain(r.selector);
   });
 });
+
+describe('scene.css reaches only the scene', () => {
+  it('every selector starts from a scene class or id prefix, the stage or a keyframe step, never a bare element', () => {
+    const own = /^(\.sc-[\w-]+|\.text-[\w-]+|\.scene \S.*|symbol\[id\^='scene-'\]( text)?|\[data-stage\].*|from|to)$/;
+    const bare = rulesOf(file).flatMap((r) => r.selector.split(',').map((x) => x.trim())).filter((x) => !own.test(x));
+    expect(bare).toEqual([]);
+  });
+});

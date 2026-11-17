@@ -103,5 +103,5 @@ export function play({ section, stage, words, paint, header, holdSnap }: PlayOpt
   });
 
   // The ambient loops (scene.css) run only while the stage is on screen.
-  new IntersectionObserver(([e]) => stage.toggleAttribute('data-playing', e.isIntersecting)).observe(stage);
+  new IntersectionObserver((entries) => stage.toggleAttribute('data-playing', entries.at(-1)!.isIntersecting)).observe(stage);
 }

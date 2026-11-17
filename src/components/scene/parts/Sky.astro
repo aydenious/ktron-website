@@ -4,6 +4,7 @@ import { bind } from '../view';
 import type { SceneState } from '../steps';
 interface Props { s: SceneState }
 const { s } = Astro.props;
+const RADII = [1.2, 1.8, 2.4]; // a table, not 1.2 + n * 0.6: that sum writes 1.7999999999999998 into the page
 const STARS = [[40, 40], [130, 80], [220, 30], [310, 70], [420, 40], [520, 90], [610, 35], [700, 75], [770, 45], [90, 125], [660, 130], [360, 110], [560, 140], [470, 20], [750, 120], [170, 130]];
 ---
 <rect width="800" height="320" fill="url(#scene-sky-day)" />
@@ -24,5 +25,5 @@ const STARS = [[40, 40], [130, 80], [220, 30], [310, 70], [420, 40], [520, 90], 
   </g>
 </g>
 <g class="sc-white" {...bind('stars', s)}>
-  {STARS.map(([x, y], k) => <circle data-amb="twinkle" cx={x} cy={y} r={1.2 + (k % 3) * 0.6} opacity={0.6 + (k % 2) * 0.4} />)}
+  {STARS.map(([x, y], k) => <circle data-amb="twinkle" cx={x} cy={y} r={RADII[k % 3]} opacity={0.6 + (k % 2) * 0.4} />)}
 </g>

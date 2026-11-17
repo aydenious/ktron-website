@@ -84,7 +84,7 @@ export const DAWN: readonly Key[] = [[2.3, 0], [2.4, 1], [2.55, 0]];
 export const MOON: readonly Key[] = [[2, 0], [2.15, 1], [2.3, 1], [2.4, 0]];
 // The sun sets at the right, crosses below the ground in the dark, and rises at the left (east).
 export const SUN_X: readonly Key[] = [
-  [0, 520], [1, 600], [2, 770], [2.2, 770], [2.2, 40], [2.4, 60], [2.55, 170], [3, 220], [4, 300], [5, 360],
+  [0, 520], [1, 600], [2, 770], [2.2, 770], [2.2, 40], [2.4, 90], [2.55, 200], [2.75, 285], [3, 310], [4, 340], [5, 360],
 ];
 export const SUN_Y: readonly Key[] = [
   [0, 70], [1, 84], [2, 262], [2.1, 330], [2.3, 330], [2.4, 250], [2.55, 120], [3, 96], [4, 72], [5, 60],

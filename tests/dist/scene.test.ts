@@ -104,6 +104,13 @@ describe.each(pages)('%s scene', (file) => {
       expect(svg.querySelectorAll('[data-amb="pulse"]')).toHaveLength(4);
     }
   });
+  it('writes no number with more than 3 decimals into any attribute of a still or of the shared drawing (float noise)', () => {
+    const root = parse(readFileSync(file, 'utf8'));
+    const noisy = [...root.querySelectorAll('#how ol[data-stills] svg.scene, defs')].flatMap((svg) =>
+      [svg, ...svg.querySelectorAll('*')].flatMap((el) =>
+        Object.entries(el.attributes).filter(([, v]) => /\d\.\d{4,}/.test(v)).map(([k, v]) => `<${el.rawTagName} ${k}="${v}">`)));
+    expect(noisy).toEqual([]);
+  });
   it('stays light: the gzipped page is at most 30 KB', () => {
     expect(gzipSync(readFileSync(file)).length).toBeLessThanOrEqual(30 * 1024);
   });
