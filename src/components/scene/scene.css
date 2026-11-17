@@ -4,6 +4,9 @@
 
 .scene text { font-family: 'Manrope Variable', system-ui, sans-serif; }
 
+/* A hidden group hides everything in it, even a part that says visibility="visible" for itself (a hidden walker's arms and crate). */
+.scene [visibility='hidden'] * { visibility: hidden; }
+
 /* brand colours */
 .sc-gold { fill: var(--gold); }
 .sc-gold-soft { fill: var(--gold-soft); }
@@ -52,6 +55,47 @@
 
 /* factory */
 .sc-glass { fill: var(--scene-glass); }
+
+/* houses */
+.sc-wall-1 { fill: var(--scene-wall-1); }
+.sc-wall-2 { fill: var(--scene-wall-2); }
+.sc-wall-3 { fill: var(--scene-wall-3); }
+.sc-wall-4 { fill: var(--scene-wall-4); }
+.sc-curtain-1 { fill: var(--scene-curtain-1); }
+.sc-curtain-2 { fill: var(--scene-curtain-2); }
+.sc-curtain-3 { fill: var(--scene-curtain-3); }
+.sc-curtain-4 { fill: var(--scene-curtain-4); }
+.sc-roof { fill: var(--scene-roof); }
+.sc-stroke-roof-line { stroke: var(--scene-roof-line); }
+.sc-door { fill: var(--scene-door); }
+.sc-door-panel { fill: var(--scene-door-panel); }
+.sc-pot { fill: var(--scene-pot); }
+.sc-leaf { fill: var(--scene-leaf); }
+.sc-leaf-2 { fill: var(--scene-leaf-2); }
+.sc-table { fill: var(--scene-table); }
+.sc-lit { fill: var(--scene-lit); }
+
+/* people */
+.sc-ink { fill: var(--scene-ink); }
+.sc-stroke-ink { stroke: var(--scene-ink); }
+.sc-stroke-navy { stroke: var(--navy); }
+.sc-stroke-grey-3 { stroke: var(--grey-3); }
+.sc-scarf { fill: var(--scene-scarf); }
+.sc-cap-peak { fill: var(--scene-cap-peak); }
+.sc-skin-1 { fill: var(--scene-skin-1); }
+.sc-skin-2 { fill: var(--scene-skin-2); }
+.sc-skin-3 { fill: var(--scene-skin-3); }
+.sc-skin-4 { fill: var(--scene-skin-4); }
+.sc-skin-driver { fill: var(--scene-skin-driver); }
+.sc-skin-qc { fill: var(--scene-skin-qc); }
+.sc-shirt-1 { fill: var(--scene-shirt-1); }
+.sc-shirt-2 { fill: var(--scene-shirt-2); }
+.sc-shirt-3 { fill: var(--scene-shirt-3); }
+.sc-shirt-4 { fill: var(--scene-shirt-4); }
+.sc-trousers-1 { fill: var(--scene-trousers-1); }
+.sc-trousers-2 { fill: var(--scene-trousers-2); }
+.sc-trousers-3 { fill: var(--scene-trousers-3); }
+.sc-trousers-driver { fill: var(--scene-trousers-driver); }
 
 /* Text: each class names one TEXT pair in tests/unit/contrast.test.ts (the house number and shirt print are decoration). */
 .text-factory { fill: var(--white); }

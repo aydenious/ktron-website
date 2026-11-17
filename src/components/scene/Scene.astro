@@ -2,14 +2,18 @@
 import './scene.css';
 import Factory from './parts/Factory.astro';
 import Ground from './parts/Ground.astro';
+import House from './parts/House.astro';
+import { LOOKS } from './parts/looks';
+import Person from './parts/Person.astro';
 import Sky from './parts/Sky.astro';
-import { HOUSE_X, INSPECT_X, VIEW_H, VIEW_W, type SceneState } from './steps';
+import { INSPECT_X, VIEW_H, VIEW_W, type SceneState } from './steps';
 import { bind } from './view';
 import type { Lang } from '../../i18n';
 interface Props { state: SceneState; lang: Lang }
 const { state: s, lang } = Astro.props;
 const I = INSPECT_X;
 const SLOTS = [0, 1, 2, 3];
+const HOUSES = [0, 1, 2, 3] as const;
 ---
 <svg class="scene" viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} width={VIEW_W} height={VIEW_H} aria-hidden="true" focusable="false">
   <Sky s={s} />
@@ -17,22 +21,7 @@ const SLOTS = [0, 1, 2, 3];
     <Ground s={s} />
     <Factory s={s} lang={lang} />
 
-    <!-- four terrace houses -->
-    {HOUSE_X.map((x, i) => (
-      <g>
-        <rect class="sc-white" x={x - 60} y="215" width="120" height="85" />
-        <path class="sc-navy" d={`M${x - 66} 218 L${x} 182 L${x + 66} 218 Z`} />
-        <rect class="sc-grey-3" x={x - 44} y="232" width="28" height="22" />
-        <rect class="sc-grey-3" x={x + 16} y="232" width="28" height="22" />
-        <g class="sc-gold" {...bind('lit', s, i)}>
-          <rect x={x - 44} y="232" width="28" height="22" /><rect x={x + 16} y="232" width="28" height="22" />
-        </g>
-        <rect class="sc-navy-2" x={x - 12} y="262" width="24" height="38" />
-        <g {...bind('house-crate', s, i)}>
-          <rect class="sc-gold" x={x + 18} y="282" width="22" height="18" /><rect class="sc-navy" x={x + 18} y="289" width="22" height="3" opacity="0.25" />
-        </g>
-      </g>
-    ))}
+    {HOUSES.map((i) => <House i={i} s={s} />)}
 
     <!-- the inspection house and its magnifier sign -->
     <rect class="sc-white" x={I - 60} y="210" width="120" height="90" />
@@ -42,6 +31,9 @@ const SLOTS = [0, 1, 2, 3];
     <circle class="sc-gold-soft" cx={I} cy="128" r="34" {...bind('lens', s)} />
     <circle class="sc-navy-2 sc-stroke-gold" cx={I} cy="128" r="18" stroke-width="6" />
     <path class="sc-stroke-gold" d={`M${I + 13} ${141} L${I + 26} ${154}`} stroke-width="7" stroke-linecap="round" />
+
+    {HOUSES.map((i) => <Person who="resident" i={i} look={LOOKS.residents[i]} s={s} />)}
+    <Person who="driver" look={LOOKS.driver} s={s} />
 
     <!-- the van: the body flips with direction, the name and crates do not -->
     <g {...bind('van', s)}>

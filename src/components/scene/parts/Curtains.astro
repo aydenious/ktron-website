@@ -1,0 +1,8 @@
+---
+// A window's two curtains and its sill, drawn over the glass (and again over the light, so they sit in front of it).
+interface Props { x0: number; i: number }
+const { x0, i } = Astro.props;
+---
+<path class={`sc-curtain-${i + 1}`} d={`M${x0 + 2} 232 h9 q-3 12 -1 30 h-8 Z`} />
+<path class={`sc-curtain-${i + 1}`} d={`M${x0 + 44} 232 h-9 q3 12 1 30 h8 Z`} />
+<rect class="sc-white" x={x0 - 4} y="267" width="54" height="3" />

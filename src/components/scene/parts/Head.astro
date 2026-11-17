@@ -1,0 +1,33 @@
+---
+// A head with its neck, hair and face (mockup `head`). `face` is the hook on the eyes and mouth alone.
+import type { Look } from './looks';
+interface Props { look: Look; cy?: number; face?: Record<string, string> }
+const { look, cy = -40, face = {} } = Astro.props;
+---
+<rect class={look.skin} x="-2" y={cy + 5} width="4" height="4" />
+<circle class={look.skin} cx="0" cy={cy} r="6.2" />
+{look.hair === 'scarf' && (
+  <>
+    <path class="sc-scarf" d={`M-7.2 ${cy + 1} a7.2 7.6 0 0 1 14.4 0 v4 q-1 5 -7.2 7 q-6.2 -2 -7.2 -7 Z`} />
+    <ellipse class={look.skin} cx="0" cy={cy + 0.6} rx="5" ry="5.4" />
+  </>
+)}
+{look.hair === 'bun' && (
+  <>
+    <circle class="sc-ink" cx="0" cy={cy - 7} r="3" />
+    <path class="sc-ink" d={`M-6.4 ${cy - 0.5} a6.4 6.6 0 0 1 12.8 0 q-6 -4.5 -12.8 0`} />
+  </>
+)}
+{look.hair === 'cap' && (
+  <>
+    <path class="sc-gold" d={`M-6.6 ${cy - 1.5} a6.6 6.6 0 0 1 13.2 0 Z`} />
+    <rect class="sc-gold" x="-7.5" y={cy - 2.4} width="15" height="2.2" rx="1" />
+    <path class="sc-cap-peak" d={`M-5 ${cy - 1.2} q5 3.2 10 0 v1.6 q-5 2.2 -10 0 Z`} />
+  </>
+)}
+{look.hair === 'short' && <path class="sc-ink" d={`M-6.4 ${cy - 0.5} a6.4 6.6 0 0 1 12.8 0 l-1.2 -0.6 q-5 -3.2 -10.4 0 Z`} />}
+<g {...face}>
+  <circle class="sc-ink" cx="-2.2" cy={cy + 0.6} r="0.85" />
+  <circle class="sc-ink" cx="2.2" cy={cy + 0.6} r="0.85" />
+  <path class="sc-stroke-ink" d={`M-1.8 ${cy + 3} q1.8 1.4 3.6 0`} stroke-width="0.7" fill="none" stroke-linecap="round" />
+</g>

@@ -1,0 +1,48 @@
+---
+// One terrace house (mockup `house`): walls, roof, window, door, the night wash, and the lit window that
+// shows its resident working at a table. The lit group comes after the wash, so a lit window is never dimmed.
+import { HOUSE_X } from '../layout';
+import type { SceneState } from '../steps';
+import { bind } from '../view';
+import Bust from './Bust.astro';
+import Curtains from './Curtains.astro';
+import { LOOKS } from './looks';
+interface Props { i: 0 | 1 | 2 | 3; s: SceneState }
+const { i, s } = Astro.props;
+const x = HOUSE_X[i];
+const L = x - 60;
+const x0 = x - 50; // the window's left edge
+const TILES = Array.from({ length: 17 }, (_, k) => L - 4 + k * 8);
+---
+<rect class={`sc-wall-${i + 1}`} x={L} y="212" width="120" height="88" />
+<path class="sc-roof" d={`M${L - 6} 216 L${x} 176 L${L + 126} 216 Z`} />
+{TILES.map((tx) => <path class="sc-stroke-roof-line" d={`M${tx} 214 L${x} 178`} stroke-width="0.8" opacity="0.35" />)}
+<rect class="sc-white" x={L - 6} y="214" width="132" height="4" />
+<path class="sc-navy-2" d={`M${x - 2} 250 H${x + 38} L${x + 42} 256 H${x - 6} Z`} />
+<rect class="sc-white" x={x0 - 2} y="228" width="50" height="40" />
+<rect class="sc-glass" x={x0} y="230" width="46" height="36" />
+<Curtains x0={x0} i={i} />
+<rect class="sc-slate" x={x + 4} y="256" width="26" height="44" />
+<g {...bind('house-door', s, i)}>
+  <rect class="sc-door" x={x + 4} y="256" width="26" height="44" />
+  <rect class="sc-door-panel" x={x + 8} y="261" width="18" height="15" rx="1" />
+  <circle class="sc-gold" cx={x + 25} cy="279" r="1.6" />
+</g>
+<rect class="sc-pot" x={L + 86} y="284" width="16" height="16" rx="2" />
+<circle class="sc-leaf" cx={L + 90} cy="280" r="7" />
+<circle class="sc-leaf-2" cx={L + 98} cy="278" r="8" />
+<rect class="sc-white" x={L} y="292" width="120" height="8" opacity="0.55" />
+<text class="text-house-no" x={L + 66} y="230" font-size="7">{12 + i * 2}</text>
+<path class="sc-night-1" d={`M${L - 6} 216 L${x} 176 L${L + 126} 216 V218 H${L + 120} V300 H${L} V218 H${L - 6} Z`} {...bind('wash', s, i)} />
+<g {...bind('lit', s, i)}>
+  <rect x={x0 - 10} y="220" width="66" height="56" fill="url(#scene-lit-glow)" />
+  <rect class="sc-lit" x={x0} y="230" width="46" height="36" />
+  <g clip-path={`url(#scene-clip-window-${i})`}>
+    <Bust look={LOOKS.residents[i]} x={x - 27} y={259} scale={0.9} />
+    <rect class="sc-table" x={x0} y="257" width="46" height="3" />
+    <circle class="sc-slate" cx={x - 33} cy="256" r="1.6" />
+    <circle class="sc-slate" cx={x - 29} cy="256.2" r="1.4" />
+    <rect class="sc-gold" x={x - 24} y="253" width="9" height="4.5" rx="0.8" {...bind('house-crate', s, i)} />
+  </g>
+  <Curtains x0={x0} i={i} />
+</g>

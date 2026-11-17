@@ -96,7 +96,7 @@ export const HOOKS = {
   tick: at('transform', view.tick),
 } satisfies Record<string, Binding>;
 
-type Hook = keyof typeof HOOKS;
+export type Hook = keyof typeof HOOKS;
 
 /** The attributes a drawing part spreads onto a hooked element: `<g {...bind('van', s)}>`. */
 export function bind(hook: Hook, s: SceneState, i = 0): Record<string, string> {

@@ -1,0 +1,15 @@
+---
+// The shirt, its collar and, by look, the shirt print or the inspector's coat (mockup `torso`).
+import type { Look } from './looks';
+interface Props { look: Look }
+const { look } = Astro.props;
+---
+<rect class={look.shirt} x="-7.5" y="-31" width="15" height="17" rx="4.5" />
+<path class="sc-stroke-navy" d="M-3 -31 L0 -27 L3 -31" stroke-width="0.7" fill="none" opacity="0.45" />
+{look.print && <text class="text-shirt" x="0" y="-21" font-size="4" font-weight="800" text-anchor="middle">KTRON</text>}
+{look.coat && (
+  <>
+    <rect class="sc-stroke-grey-3" x="-7.5" y="-31" width="15" height="17" rx="4.5" fill="none" stroke-width="0.6" />
+    <rect class="sc-grey-2" x="-0.3" y="-27" width="0.6" height="12" />
+  </>
+)}

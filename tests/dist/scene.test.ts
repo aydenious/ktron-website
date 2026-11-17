@@ -35,6 +35,25 @@ describe.each(pages)('%s scene', (file) => {
       expect(written(copy)).toEqual(written(all[k]));
     });
   });
+  it('draws four houses with their own door, lit window and table crate, and five walkers', () => {
+    const svg = stills(file)[0];
+    for (const h of ['house-door', 'lit', 'house-crate', 'resident', 'resident-show', 'resident-face', 'resident-crate', 'resident-arms', 'resident-leg-a', 'resident-leg-b'])
+      expect(svg.querySelectorAll(`[data-${h}]`).map((el) => el.getAttribute(`data-${h}`)).sort(), h).toEqual(['0', '1', '2', '3']);
+    for (const h of ['driver', 'driver-show', 'driver-face', 'driver-crate', 'driver-arms', 'driver-leg-a', 'driver-leg-b'])
+      expect(svg.querySelectorAll(`[data-${h}]`), h).toHaveLength(1);
+    expect(svg.querySelectorAll('[data-wash]').map((el) => el.getAttribute('data-wash')).sort()).toEqual(['0', '1', '2', '3', '4']);
+  });
+  it('shows the driver carrying a crate in front of the factory in the last still', () => {
+    const last = stills(file)[4];
+    expect(last.querySelector('[data-driver-show]')!.getAttribute('visibility')).toBe('visible');
+    expect(last.querySelector('[data-driver-crate]')!.getAttribute('visibility')).toBe('visible');
+    expect(last.querySelector('[data-driver]')!.getAttribute('transform')).toBe('translate(190 316)');
+  });
+  it('draws one glow rect per house and puts no hook on it', () => {
+    const svg = stills(file)[0];
+    for (const el of svg.querySelectorAll('rect[fill="url(#scene-lit-glow)"]')) expect(Object.keys(el.attributes).filter((a) => a.startsWith('data-'))).toEqual([]);
+    expect(svg.querySelectorAll('rect[fill="url(#scene-lit-glow)"]')).toHaveLength(4);
+  });
   it('has the sky layers, the factory door and the dock crates', () => {
     for (const h of ['sunset', 'dawn', 'night', 'sun', 'moon', 'moon-rise', 'stars', 'factory-door', 'wash']) expect(stills(file)[0].querySelectorAll(`[data-${h}]`).length, h).toBeGreaterThan(0);
     expect(stills(file)[0].querySelectorAll('[data-dock-crate]')).toHaveLength(4);
