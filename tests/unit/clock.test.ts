@@ -83,9 +83,8 @@ describe('the scene clock (spec §2)', () => {
   });
 
   describe('the step dots (rule 5)', () => {
-    it('dot k sets the clock to k − 1 and plays on, from any state', () => {
-      for (const from of [start, at(2.5, 'playing'), at(2.5, 'paused', true), at(5, 'done')])
-        expect([1, 2, 3, 4, 5].map((k) => jump(k))).toEqual([0, 1, 2, 3, 4].map((t) => at(t, 'playing')));
+    it('dot k sets the clock to k − 1 and plays on', () => {
+      expect([1, 2, 3, 4, 5].map((k) => jump(k))).toEqual([0, 1, 2, 3, 4].map((t) => at(t, 'playing')));
     });
     it('a jumped clock plays on to 5 and stops', () => {
       expect(tick(jump(5), 99)).toEqual(at(5, 'done'));

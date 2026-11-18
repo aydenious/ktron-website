@@ -95,10 +95,10 @@ const { lang } = Astro.props;
   .dots { display: flex; }
   .dot { width: 44px; height: 44px; padding: 0; border: 0; background: none; color: var(--navy); display: grid; place-items: center; cursor: pointer; touch-action: manipulation; }
   .dot span { width: 12px; height: 12px; border-radius: 50%; border: 2px solid currentColor; }
-  .dot:hover span { background: var(--gold-soft); }
+  @media (hover: hover) { .dot:hover span { background: var(--gold-soft); } }
   .dot[aria-current='step'] span, .dot[aria-current='step']:hover span { background: currentColor; }
   .toggle { min-width: 44px; min-height: 44px; padding: 0 16px; border: 1px solid var(--navy); border-radius: var(--radius); background: transparent; color: var(--navy); font: inherit; font-weight: 700; cursor: pointer; touch-action: manipulation; }
-  .toggle:hover { background: var(--gold-soft); }
+  @media (hover: hover) { .toggle:hover { background: var(--gold-soft); } }
   /* One label at a time, by state: Pause while playing, Replay when finished, Play otherwise. */
   .toggle [data-label] { display: none; align-items: center; gap: 8px; }
   .how[data-play='playing'] [data-label='pause'], .how[data-play='done'] [data-label='replay'],
