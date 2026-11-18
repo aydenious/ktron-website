@@ -1,5 +1,6 @@
 import { AxeBuilder } from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { buildIdle } from './helpers';
 
 const HOMES = ['/', '/zh/'];
 const isPhone = (name: string) => name !== 'desktop';
@@ -72,6 +73,7 @@ for (const home of HOMES) {
       test(`axe finds no WCAG 2 AA violation at ${width} px`, async ({ page }) => {
         await page.setViewportSize({ width, height: 900 });
         await page.goto(home);
+        await buildIdle(page); // the scene's own controls are part of the page
         const result = await new AxeBuilder({ page })
           .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
           .analyze();
@@ -83,6 +85,7 @@ for (const home of HOMES) {
       test(`every focusable element shows a focus ring with 3:1 contrast at ${width} px`, async ({ page }) => {
         await page.setViewportSize({ width, height: 900 });
         await page.goto(home);
+        await buildIdle(page);
         const seen = await tabThrough(page);
         expect(seen.length).toBeGreaterThan(10);
         const missing = seen.filter((s) => !hasIndicator(s));
@@ -101,6 +104,7 @@ test('every control meets its target size', async ({ page }, info) => {
   // not a tap target. Every other visible a, button and summary must reach the minimum.
   for (const home of HOMES) {
     await page.goto(home);
+    await buildIdle(page); // the scene's play button and step dots are built once the reader is near
     const small = await page.evaluate((size) => {
       const out: string[] = [];
       for (const el of document.querySelectorAll('a[href], button, summary')) {

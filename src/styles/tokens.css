@@ -78,7 +78,7 @@
   --shadow-card: 0 10px 30px rgb(11 37 69 / 0.12);
   --font-latin: "Manrope Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-zh: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", "Noto Sans SC", "Source Han Sans SC";
-  --header-h: 64px; /* the sticky header: its bar, the phone menu below it, the pinned scene under it */
+  --header-h: 64px; /* the sticky header: its bar, and the phone menu below it */
   --gutter: 16px;
   --max: 1120px;
   --radius: 12px;
