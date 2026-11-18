@@ -27,27 +27,29 @@ export async function holdChunk(page: Page) {
   });
   return { release, isHeld: () => held };
 }
-export const scrollTo = (page: Page, top: number) =>
-  page.evaluate((y) => window.scrollTo({ top: y, behavior: 'instant' }), top);
-
-/** Brings the section near, waits for the script, returns the pinned range in px. */
-export async function ready(page: Page): Promise<[number, number]> {
+/** Brings the section near, waits for the script, and leaves the stage where it is (it plays when 60 % of it is on screen). */
+export async function ready(page: Page) {
   await how(page).scrollIntoViewIfNeeded();
   await expect(page.locator('section#how[data-ready]')).toHaveCount(1);
-  return how(page).evaluate((s) => [Number(s.dataset.start), Number(s.dataset.end)]);
 }
 
-/** The section's state: committed step, scene clock, settle point of step 1, band, pin end. */
+/** Builds the scene with its stage still below the viewport: it waits at the opening frame, as a reader arriving from below leaves it. */
+export async function buildIdle(page: Page) {
+  await how(page).evaluate((e) => scrollTo({ top: e.getBoundingClientRect().top + scrollY - innerHeight + 40, behavior: 'instant' }));
+  await expect(page.locator('section#how[data-ready]')).toHaveCount(1);
+  await expect(stage(page).locator('button')).toHaveCount(6); // the five dots and the play button, for the checks that walk the page
+}
+
+/** Puts the whole stage in the middle of the viewport, instantly. */
+export const showStage = (page: Page) => stage(page).evaluate((e) => e.scrollIntoView({ block: 'center', behavior: 'instant' }));
+
+/** The section's state: the step on the counter, the scene clock (3 decimals) and play | idle | playing | paused | done. */
 export const state = (page: Page) =>
-  how(page).evaluate((s) => ({ step: Number(s.dataset.step), t: s.dataset.t, start: Number(s.dataset.start), B: Number(s.dataset.band), end: Number(s.dataset.end) }));
+  how(page).evaluate((s) => ({ step: Number(s.dataset.step), t: s.dataset.t!, play: s.dataset.play! }));
+export const clock = async (page: Page) => Number((await state(page)).t);
+export const toggle = (page: Page) => stage(page).locator('button[data-toggle]');
+export const dot = (page: Page, n: number) => stage(page).locator(`button[data-dot="${n}"]`);
 /** A scroll of dy px the way a finger or wheel makes one (mobile WebKit has no mouse.wheel). */
 export const nudge = (page: Page, dy: number) => page.evaluate((d) => window.scrollBy({ top: d, behavior: 'instant' }), dy);
-/** Waits until a step has finished playing and the page has settled on its settle point. */
-export async function settled(page: Page, n: number) {
-  await expect.poll(async () => (await state(page)).step, { timeout: 15000 }).toBe(n);
-  await expect.poll(async () => (await state(page)).t, { timeout: 15000 }).toBe(`${n}.000`);
-  const { start, B } = await state(page);
-  const P = start + Math.max(n - 1, 0) * B;
-  await expect.poll(() => page.evaluate(() => scrollY), { timeout: 5000 }).toBeGreaterThanOrEqual(P - 2);
-  await expect.poll(() => page.evaluate(() => scrollY), { timeout: 5000 }).toBeLessThanOrEqual(P + 2);
-}
+/** Plays `seconds` of the page's own time at once (page.clock must have been installed before the page loaded). */
+export const fast = (page: Page, seconds: number) => page.clock.runFor(seconds * 1000);

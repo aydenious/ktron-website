@@ -62,3 +62,26 @@ describe.each([['/', en], ['/zh/', zh]] as const)('%s how it works stills', (pat
     });
   });
 });
+
+describe.each([['/', en], ['/zh/', zh]] as const)('%s how it works controls (the template the script clones)', (path, s) => {
+  const controls = page(path).querySelector('#how template[data-controls]');
+  it('holds five step dots, each a button named for its step', () => {
+    expect(controls).not.toBeNull();
+    const dots = controls!.querySelectorAll('button[data-dot]');
+    expect(dots.map((d) => d.getAttribute('data-dot'))).toEqual(['1', '2', '3', '4', '5']);
+    dots.forEach((d, i) => expect(d.getAttribute('aria-label')).toBe(s['how.step'].replace('{n}', String(i + 1))));
+  });
+  it('names the group of dots', () => {
+    const group = controls!.querySelector('[role="group"]');
+    expect(group?.getAttribute('aria-label')).toBe(s['how.steps']);
+    expect(group?.querySelectorAll('button[data-dot]')).toHaveLength(5);
+  });
+  it('holds one toggle button with a Play, a Pause and a Replay label in the page language', () => {
+    const toggle = controls!.querySelectorAll('button[data-toggle]');
+    expect(toggle).toHaveLength(1);
+    expect(['play', 'pause', 'replay'].map((k) => toggle[0].querySelector(`[data-label="${k}"]`)?.text.trim())).toEqual([s['how.play'], s['how.pause'], s['how.replay']]);
+  });
+  it('is inert until the script clones it: nothing of it is in the page itself', () => {
+    expect(page(path).querySelectorAll('#how .stage, #how [data-stage]')).toHaveLength(0);
+  });
+});

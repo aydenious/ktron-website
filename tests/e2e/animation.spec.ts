@@ -1,36 +1,6 @@
 import { gzipSync } from 'node:zlib';
 import { expect, test, type Page } from '@playwright/test';
-import { holdChunk, how, pageUp, ready, scrollTo, settled, stage, state, still } from './helpers';
-
-test('the scene pins and its captions advance through all five steps', async ({ page }) => {
-  await page.goto('/');
-  const [start, end] = await ready(page);
-  expect(end - start).toBeGreaterThan(2 * page.viewportSize()!.height);
-  const { B } = await state(page);
-  for (let n = 1; n <= 5; n++) {
-    await scrollTo(page, start + (n - 1) * B);
-    await settled(page, n);
-    const text = await still(page, n).locator('[data-caption]').textContent();
-    await expect(stage(page).locator('[data-caption]')).toHaveText(text!);
-    await expect(stage(page).locator('[data-counter]')).toHaveText((await still(page, n).locator('[data-counter]').textContent())!);
-    await expect(stage(page)).toBeInViewport({ ratio: 0.9 });
-  }
-});
-
-test('scrolling back returns to step 1', async ({ page }) => {
-  await page.goto('/');
-  const [start, end] = await ready(page);
-  await scrollTo(page, end - 10);
-  await expect(stage(page).locator('[data-caption]')).toHaveText((await still(page, 5).locator('[data-caption]').textContent())!);
-  await scrollTo(page, start - 200);
-  await expect(stage(page).locator('[data-caption]')).toHaveText((await still(page, 1).locator('[data-caption]').textContent())!);
-  // The clock plays back from step 5 to the opening frame: about 5.4 s.
-  for (const hook of ['van', 'world', 'night']) {
-    const el = stage(page).locator(`[data-${hook}]`);
-    const attr = hook === 'night' ? 'opacity' : 'transform';
-    await expect(el).toHaveAttribute(attr, (await still(page, 1).locator(`[data-${hook}]`).getAttribute(attr))!, { timeout: 15000 });
-  }
-});
+import { buildIdle, holdChunk, how, pageUp, ready, showStage, stage, still } from './helpers';
 
 const sectionTop = (page: Page, id: string) => page.locator(`#${id}`).evaluate((e) => e.getBoundingClientRect().top);
 /** Pixels between a section and the place a link to it should leave it: under the sticky header
@@ -83,8 +53,7 @@ async function followDeepLink(page: Page, hash: string, id: string, mode: 'smoot
     .toHaveCount(crossed ? 1 : 0);
   if (crossed) {
     await expect(stage(page)).toHaveCount(1);
-    await expect(page.locator('.pin-spacer')).toHaveCount(1);
-    await expect(how(page)).toHaveAttribute('data-end', /^\d+$/);
+    await expect(how(page)).toHaveAttribute('data-play', /^(idle|playing|paused|done)$/);
     expect(await offTarget(page, id)).toBeLessThanOrEqual(4); // still there once it is built
   }
   // The reader scrolls back up to the scene: it is built, and the target is not pulled again.
@@ -95,7 +64,9 @@ async function followDeepLink(page: Page, hash: string, id: string, mode: 'smoot
   }, { timeout: 30000, intervals: [100] }).toBe(true);
   await expect(page.locator('section#how[data-ready]')).toHaveCount(1);
   await expect(how(page)).toBeInViewport();
-  expect(await sectionTop(page, id)).toBeGreaterThan(page.viewportSize()!.height);
+  // The target is below the scene by the scene's own height at least (the reader stopped within 200 px of its top): not pulled back to its landing place.
+  const height = await how(page).evaluate((e) => e.getBoundingClientRect().height);
+  expect(await sectionTop(page, id)).toBeGreaterThan(height - 204);
 }
 
 for (const mode of ['smooth', 'instant'] as const) {
@@ -240,37 +211,19 @@ test('a malformed hash does not break the scene', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
-test('no horizontal scroll at 320 px once the scene is built', async ({ page }) => {
+test('no horizontal scroll at 320 px once the scene is built, with its controls', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 700 });
   await page.goto('/');
-  const [start, end] = await ready(page);
-  for (const y of [start, (start + end) / 2, end]) {
-    await scrollTo(page, y);
-    expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(0);
-  }
-});
-
-test('resizing after the scene is built moves the pinned range, keeps the committed step and the captions still advance', async ({ page }) => {
-  await page.goto('/');
-  const [start0] = await ready(page);
-  const before = await state(page);
-  await scrollTo(page, start0 + 2 * before.B);
-  await settled(page, 3);
-  const h = page.viewportSize()!.height;
-  await page.setViewportSize({ width: page.viewportSize()!.width, height: h - 200 });
-  await expect.poll(async () => (await state(page)).B).not.toBe(before.B);
-  await settled(page, 3); // the step stays, and the page settles on the new P_3
-  const { start, B } = await state(page);
-  for (const n of [5, 1]) {
-    await scrollTo(page, start + (n - 1) * B);
-    await settled(page, n);
-    await expect(stage(page).locator('[data-caption]')).toHaveText((await still(page, n).locator('[data-caption]').textContent())!);
-  }
+  await buildIdle(page);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(0);
+  await showStage(page);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(0);
+  for (const b of await stage(page).locator('button').all()) expect((await b.boundingBox())!.x + (await b.boundingBox())!.width).toBeLessThanOrEqual(320);
 });
 
 test.describe('reduced motion', () => {
   test.use({ reducedMotion: 'reduce' });
-  test('shows the five still pictures and pins nothing', async ({ page }) => {
+  test('shows the five still pictures: no stage, no controls', async ({ page }) => {
     const scripts: string[] = [];
     page.on('request', (r) => { if (/\/animate\.[^/]*\.js$/.test(new URL(r.url()).pathname)) scripts.push(r.url()); });
     await page.goto('/');
@@ -279,7 +232,7 @@ test.describe('reduced motion', () => {
     await page.waitForLoadState('networkidle');
     expect(scripts, 'the animation chunk is never requested').toEqual([]);
     await expect(stage(page)).toHaveCount(0);
-    await expect(page.locator('.pin-spacer')).toHaveCount(0);
+    await expect(page.locator('#how button')).toHaveCount(0);
     for (let n = 1; n <= 5; n++) {
       await still(page, n).scrollIntoViewIfNeeded();
       await expect(still(page, n).locator('svg.scene')).toBeVisible();

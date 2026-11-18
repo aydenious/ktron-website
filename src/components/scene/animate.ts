@@ -1,11 +1,6 @@
-import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { refreshWhenFontsSettle } from './fonts';
 import { painter } from './paint';
 import { play } from './play';
 import { stateAt } from './steps';
-
-gsap.registerPlugin(ScrollTrigger);
 
 /** How the reader got here, decided by the loader before the script was fetched. */
 interface Arrival {
@@ -19,7 +14,7 @@ interface Arrival {
   whenOver: (done: () => void) => void;
 }
 
-/** Turns the five stills of section#how into one pinned scene: each scroll gesture starts a step and the step plays to its end. */
+/** Turns the five stills of section#how into one scene that plays on its own, once, with a pause control and step dots. */
 export function setup(section: HTMLElement, arrival: Arrival): void {
   const list = section.querySelector<HTMLElement>('ol[data-stills]')!;
   const stills = [...list.querySelectorAll('li[data-step]')];
@@ -29,7 +24,7 @@ export function setup(section: HTMLElement, arrival: Arrival): void {
   }));
 
   // Review Focus 3: whatever the reader is looking at below this section must not move.
-  // While the section grows, the browser's own scroll anchoring and global.css's smooth scrolling
+  // While the section changes height, the browser's own scroll anchoring and global.css's smooth scrolling
   // are both off, so the corrections below are instant, ordered and the only scrolls there are.
   const root = document.documentElement;
   root.style.scrollBehavior = 'auto';
@@ -37,59 +32,50 @@ export function setup(section: HTMLElement, arrival: Arrival): void {
   // setup runs after the script has downloaded: the reader may have acted since the loader decided.
   const deepLink = arrival.arriving() ? arrival.deepLink : null;
   const linkTarget = arrival.linkTarget();
-  // A deep link's own scroll is still running here and the growth below would abort it, leaving the
+  // A deep link's own scroll is still running here and the change in height below would abort it, leaving the
   // reader short of the target. Finish it first, at once.
   if (deepLink && deepLink.getBoundingClientRect().top > innerHeight) deepLink.scrollIntoView({ behavior: 'instant', block: 'start' });
   const readerIsBelow = section.getBoundingClientRect().top < 0;
-  // A clicked header link's smooth scroll was aimed before the growth; aim it again afterwards.
+  // A clicked header link's smooth scroll was aimed before the change; aim it again afterwards.
   const reaim = !!linkTarget && linkTarget.getBoundingClientRect().top > 0;
-  // The section's own bottom edge measures the growth: everything below it moves by that much.
+  // The section's own bottom edge measures the change in height (five stills become one stage): everything below it moves by that much.
   // (section.nextElementSibling is Astro's script tag, which has no box to measure.)
   const before = section.getBoundingClientRect().bottom;
 
+  const controls = section.querySelector<HTMLTemplateElement>('template[data-controls]')!;
+  const view = document.createElement('div');
+  view.className = 'view';
+  view.dataset.view = '';
+  view.setAttribute('aria-hidden', 'true'); // the same words are in the visually hidden list
+  const figure = stills[0].querySelector('figure')!.cloneNode(true) as HTMLElement;
+  // The caption changes from step to step and wraps to one line or two. The other captions sit in the same grid cell,
+  // hidden, so the cell is as tall as the longest one and the controls below never move while the scene plays.
+  const live = figure.querySelector('[data-caption]')!;
+  for (const w of words) {
+    const copy = live.cloneNode(false) as HTMLElement;
+    copy.removeAttribute('data-caption');
+    copy.dataset.sizer = '';
+    copy.setAttribute('aria-hidden', 'true');
+    copy.textContent = w.caption;
+    live.after(copy);
+  }
+  view.append(figure);
   const stage = document.createElement('div');
   stage.className = 'stage';
   stage.dataset.stage = '';
-  stage.setAttribute('aria-hidden', 'true');
-  stage.append(stills[0].querySelector('figure')!.cloneNode(true));
+  stage.append(view, controls.content.cloneNode(true));
   list.after(stage);
   list.classList.add('visually-hidden');
 
-  const paint = painter(stage.querySelector<SVGSVGElement>('svg.scene')!);
-  const header = () => document.querySelector<HTMLElement>('.site-header')?.offsetHeight ?? 0;
-  // A clicked link (hero, header) scrolls the page on its own, maybe through the scene: the snap waits until that
-  // scroll has landed on its target, or the reader takes over. The loader's own record of the click goes once
-  // setup has run, so this keeps its own.
-  let target: Element | null = arrival.linkTarget();
-  const landed = (el: Element) => {
-    const margin = parseFloat(getComputedStyle(el).scrollMarginTop) || 0;
-    return Math.abs(el.getBoundingClientRect().top - margin) <= 4 || scrollY >= root.scrollHeight - innerHeight - 1;
-  };
-  const check = () => { if (target && landed(target)) target = null; };
-  for (const type of ['wheel', 'touchstart', 'keydown', 'pointerdown']) addEventListener(type, () => { target = null; }, { passive: true });
-  addEventListener('scroll', check, { passive: true });
-  // A scroll that ends outside the pin is over (it landed, or something stopped it): nothing to wait for.
-  addEventListener('scrollend', () => {
-    if (scrollY < Number(section.dataset.start) || scrollY > Number(section.dataset.end)) target = null;
-  });
-  addEventListener('click', (e) => {
-    const id = (e.target as Element).closest?.('a[href^="#"]')?.getAttribute('href')?.slice(1);
-    target = (id && document.getElementById(id)) || null;
-    check();
-  }, true);
-  const holdSnap = () => !!target;
-  play({ section, stage, words, paint: (t) => paint(stateAt(t)), header, holdSnap });
-  ScrollTrigger.refresh();
-  check();
-  refreshWhenFontsSettle(document.fonts, () => ScrollTrigger.refresh());
+  const paint = painter(view.querySelector<SVGSVGElement>('svg.scene')!);
+  play({ section, stage, words, paint: (t) => paint(stateAt(t)) });
 
   if (readerIsBelow) {
     const shift = section.getBoundingClientRect().bottom - before;
     if (Math.abs(shift) > 0.5) window.scrollBy({ top: shift, behavior: 'instant' });
-    ScrollTrigger.update();
   }
   if (deepLink) {
-    // The browser's smooth scroll can still deliver a last frame measured before the growth. Whenever a
+    // The browser's smooth scroll can still deliver a last frame measured before the change. Whenever a
     // scroll ends while the reader is still arriving, put the target back (a no-op once it is there).
     const settle = () => deepLink.scrollIntoView({ behavior: 'instant', block: 'start' });
     addEventListener('scrollend', settle);
@@ -98,7 +84,7 @@ export function setup(section: HTMLElement, arrival: Arrival): void {
   requestAnimationFrame(() => {
     root.style.removeProperty('overflow-anchor');
     root.style.removeProperty('scroll-behavior');
-    // The growth above aborted the link's own scroll, and a scroll started while the two styles were still set dies
+    // The change above aborted the link's own scroll, and a scroll started while the two styles were still set dies
     // within a frame (a scrollend there lands short), so the link is followed again only now, one frame later.
     if (reaim) requestAnimationFrame(() => linkTarget.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   });

@@ -3,7 +3,7 @@ import { gzipSync } from 'node:zlib';
 import { parse, type HTMLElement } from 'node-html-parser';
 import { describe, expect, it } from 'vitest';
 import { painter } from '../../src/components/scene/paint';
-import { CLIP } from '../../src/components/scene/scroll';
+import { CLIP } from '../../src/components/scene/clock';
 import { STILLS, stateAt } from '../../src/components/scene/steps';
 import { HOOKS } from '../../src/components/scene/view';
 
