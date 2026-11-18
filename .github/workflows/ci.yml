@@ -47,6 +47,7 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      # On a push to main the base is main itself, so the base check passes there; the pull request carries the gate.
       - run: node scripts/audit.mjs --base "origin/$BASE_REF"
       # The count gate reads its baseline from the branch this PR merges into, so a PR cannot
       # raise its own baseline or rewrite the history it inherited.

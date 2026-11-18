@@ -22,7 +22,7 @@ npm fails `npm ci` in CI.
 
 ## Rules
 
-- The CI `npm audit` gate is `node scripts/audit.mjs` (`npm run audit`): a high or critical advisory fails unless `audit-allowlist.txt` names it with a reason. The list may only shrink: a stale entry fails, and CI (`--base`) fails an entry the target branch does not have, so a PR cannot accept an advisory for itself. A new high advisory means update or replace the package; never add an entry without the owner.
+- The CI `npm audit` gate is `node scripts/audit.mjs` (`npm run audit`): a high or critical advisory fails unless `audit-allowlist.txt` names it with a reason (10 characters or more). The list may only shrink: a stale entry fails, and CI (`--base`) fails every entry the target branch's list lacks, also when that branch has no list. A new high advisory means update or replace the package. A PR that adds an entry fails this check; only the owner merges it, past the check; an agent never does.
 - Never name a customer anywhere: pages, alt text, file names, commits, PR text.
 - No real system screenshots, worker names or faces, prices, client logos or testimonials.
 - This repo is public: no secrets, no `.env` values, and no self-hosted CI runner (HARNESS section 9).

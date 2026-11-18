@@ -26,6 +26,12 @@ it('no run step has a ${{ }} expression in its script', () => {
   expect(scripts.filter((l) => l.includes('${{'))).toEqual([]);
 });
 
+// The audit and count gates read origin/<base> with `git show`: a shallow checkout has no such ref.
+it('the quality job checks out the full history', () => {
+  const quality = ci.slice(ci.indexOf('\n  quality:'));
+  expect(quality.slice(quality.indexOf('actions/checkout'), quality.indexOf('npm ci'))).toContain('fetch-depth: 0');
+});
+
 it('every command in npm run verify is a CI step', () => {
   const verify: string = JSON.parse(readFileSync('package.json', 'utf8')).scripts.verify;
   for (const cmd of verify.split('&&').map((s) => s.trim())) expect(ci, cmd).toContain(`- run: ${cmd}`);
