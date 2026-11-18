@@ -1,0 +1,7 @@
+# Accepted npm advisories (high or critical) for scripts/audit.mjs. One per line:
+#   GHSA-xxxx-xxxx-xxxx  <reason>
+# Each entry needs a reason (10 characters or more). The list may only shrink: delete an entry when npm
+# stops reporting it (the gate fails on a stale one). A new high advisory means update or replace the
+# package. A PR that adds an entry fails this check; only the owner merges it, past the check; an agent
+# never does.
+GHSA-fc5q-39xc-vjpf  picomatch ReDoS: globs we write ourselves at build and test time only, no visitor input reaches one; no fixed release (4.0.7 is latest), re-check when picomatch publishes a fix
