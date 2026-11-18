@@ -116,7 +116,7 @@ describe('the real list and its wiring', () => {
 
   it('the CI quality job runs the gate, not a bare npm audit', () => {
     const ci = readFileSync('.github/workflows/ci.yml', 'utf8');
-    expect(ci).toContain("- run: node scripts/audit.mjs --base origin/${{ github.base_ref || 'main' }}");
+    expect(ci).toContain('- run: node scripts/audit.mjs --base "origin/$BASE_REF"');
     expect(ci).not.toMatch(/npm audit/);
   });
 });
