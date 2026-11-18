@@ -87,6 +87,8 @@ its React frontend from one script, another counts `try?` in Swift.
 | LLM calls | model calls nobody declared; no output cap (`max_tokens`); prompt changes shipped with no evaluation | a test: requests only from declared sites, a cap per call under a ceiling that may only fall, a register of prompt versions or hashes, each naming its evaluation |
 | CI matches local | a check that runs before push but not in CI, or the reverse | a test comparing the local verify script or pre-push hook with the CI steps |
 
+A dependency gate that must tolerate an advisory with no fixed release keeps an accepted list (`audit-allowlist.txt` here): each entry has a reason, the list may only shrink, and a new high advisory means update or replace the package, never add an entry without the owner.
+
 Rules for adding tools:
 - dev-only dependencies with pinned versions;
 - run them inside the existing CI workflow;

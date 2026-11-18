@@ -12,6 +12,7 @@
     "preview": "astro preview --ignore-lock",
     "test": "vitest run",
     "quality": "node scripts/quality.mjs",
+    "audit": "node scripts/audit.mjs",
     "brand:pick": "node scripts/pick-logo.mjs",
     "verify": "npm run check && npm run build && npm test && npm run quality"
   },
