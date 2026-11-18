@@ -1,5 +1,5 @@
 // Clock → scene: plays the scene clock on its own once the stage is on screen, and wires the controls. Spec §2.
-import { jump, onScreen, press, seen, start, tick, type Run } from './clock';
+import { jump, levelOf, press, seen, start, tick, type Level, type Run } from './clock';
 import { stepOf } from './steps';
 
 interface Words {
@@ -36,6 +36,7 @@ export function play({ section, stage, words, paint }: PlayOptions): void {
     paint(run.t);
     section.dataset.t = run.t.toFixed(3);
     section.dataset.play = run.mode;
+    stage.toggleAttribute('data-playing', run.mode === 'playing'); // the ambient loops (scene.css) move only while the scene plays
     const n = stepOf(run.t);
     if (n === shown) return;
     shown = n;
@@ -65,12 +66,14 @@ export function play({ section, stage, words, paint }: PlayOptions): void {
   const toggle = () => set(press(run));
   stage.querySelector('[data-view]')!.addEventListener('click', toggle);
   stage.querySelector('[data-toggle]')!.addEventListener('click', toggle);
-  dots.forEach((d, i) => d.addEventListener('click', () => set(jump(run, i + 1))));
+  dots.forEach((d, i) => d.addEventListener('click', () => set(jump(i + 1))));
 
-  // The clock runs only while the stage is on screen; the ambient loops (scene.css) go by any part of it.
+  // The clock plays only while the stage is on screen.
+  let before: Level = 'gone';
   new IntersectionObserver((entries) => {
-    const e = entries.at(-1)!;
-    stage.toggleAttribute('data-playing', e.isIntersecting);
-    set(seen(run, onScreen(e)));
+    const level = levelOf(entries.at(-1)!);
+    const was = before;
+    before = level;
+    set(seen(run, level, was));
   }, { threshold: THRESHOLDS }).observe(stage);
 }

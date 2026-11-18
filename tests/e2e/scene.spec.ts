@@ -36,19 +36,30 @@ test('a shared symbol is not clipped to the 800 px view: at t 2 the road and gra
   expect(hit).toBe('use');
 });
 
-test('the ambient loops run only while the stage is on screen', async ({ page }) => {
+test('the ambient loops run only while the scene plays: not on Pause, not off screen, not once finished', async ({ page }) => {
+  await page.clock.install({ time: new Date('2026-11-18T00:00:00Z') });
   await page.goto('/');
+  await page.clock.pauseAt(new Date('2026-11-18T00:01:00Z'));
   await ready(page);
-  await showStage(page);
-  await expect(stage(page)).toHaveAttribute('data-playing', '');
   const star = stage(page).locator('[data-amb="twinkle"]').first();
-  await expect.poll(() => star.evaluate((e) => getComputedStyle(e).animationName)).toBe('scene-twinkle');
-  await page.locator('#contact').scrollIntoViewIfNeeded();
+  const loop = () => star.evaluate((e) => getComputedStyle(e).animationName);
+  const stills = page.locator('#how ol[data-stills] [data-amb="twinkle"]').first();
+  await expect(stills).toHaveCSS('animation-name', 'none');
+  await showStage(page);
+  await expect(how(page)).toHaveAttribute('data-play', 'playing');
+  await expect.poll(loop).toBe('scene-twinkle');
+  await stage(page).locator('button[data-toggle]').click(); // Pause
   await expect(stage(page)).not.toHaveAttribute('data-playing', '');
-  await expect(page.locator('#how ol[data-stills] [data-amb="twinkle"]').first()).toHaveCSS('animation-name', 'none');
-  await showStage(page); // and they start again on the way back (the observer's last entry decides)
-  await expect(stage(page)).toHaveAttribute('data-playing', '');
-  await expect.poll(() => star.evaluate((e) => getComputedStyle(e).animationName)).toBe('scene-twinkle');
+  await expect.poll(loop).toBe('none');
+  await stage(page).locator('button[data-toggle]').click(); // Play
+  await expect.poll(loop).toBe('scene-twinkle');
+  await page.locator('#contact').scrollIntoViewIfNeeded(); // off screen: paused
+  await expect.poll(loop).toBe('none');
+  await showStage(page); // and they start again on the way back
+  await expect.poll(loop).toBe('scene-twinkle');
+  await page.clock.runFor(19_000); // the scene finishes: the final scene is still
+  await expect(how(page)).toHaveAttribute('data-play', 'done');
+  await expect.poll(loop).toBe('none');
 });
 
 /** How far section#how's top is from where a link to it puts it (its scroll-margin-top), px. */

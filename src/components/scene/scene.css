@@ -110,8 +110,8 @@ symbol[id^='scene-'] { overflow: visible; }
 .text-house-no { fill: var(--navy-2); opacity: 0.6; }
 .text-shirt { fill: var(--gold); }
 
-/* Ambient loops (spec §3, §7; ruling R12): only the clone on the stage plays, only while it is on screen, only opacity
-   and transform move. The stills never match [data-stage]. */
+/* Ambient loops (spec §3, §7; ruling R12): only the clone on the stage plays, only while the scene is playing (data-playing:
+   not paused, not off screen, not finished), only opacity and transform move. The stills never match [data-stage]. */
 @media (prefers-reduced-motion: no-preference) {
   [data-stage][data-playing] [data-amb='twinkle'] { animation: scene-twinkle 2.4s ease-in-out infinite alternate; }
   [data-stage][data-playing] [data-amb='twinkle']:nth-of-type(3n + 1) { animation-delay: -0.8s; }

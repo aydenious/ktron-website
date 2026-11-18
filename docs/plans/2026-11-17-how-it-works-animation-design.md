@@ -38,7 +38,10 @@ The page scrolls exactly as if the section were a still image. A clock drives th
   by itself, not even after the reader scrolls away and back. (A stage taller than the viewport, a phone held
   sideways, counts as on screen once it fills 60 % of the viewport, since 60 % of it can never show.)
 - **Off screen is paused.** If the stage drops below 60 % while playing, the clock pauses where it is and resumes
-  from there when the stage is back. The ambient loops keep their own on-screen rule (`data-playing`).
+  from there when the stage is back. It pauses when the stage drops below 60 % after having been on screen, or leaves
+  the screen; a Play pressed while less than 60 % shows keeps playing until the stage next leaves, so the next scroll
+  does not undo it. The ambient loops (§3) run only while `data-play` is `playing`: they stop on Pause, off screen and
+  once the scene is finished, so the whole picture holds still.
 - **One control.** A real button in the stage's bottom-right corner, outside any `aria-hidden` part, at least
   44 × 44 px. Its label and icon follow the state: **Pause** while playing, **Play** while paused by the button
   (and before the first autoplay, when it starts the scene), **Replay** when finished (restarts from t 0). A click
@@ -79,7 +82,7 @@ story takes about 18 s.
 | 4 | 3–4 | 3.0 s | morning | **3.00–3.04:** the van turns to face right while standing. **3.04–3.60:** it drives right past every house to the inspection house. **3.60–3.75:** the QC window glows, with the inspector in a white coat at the 10x microscope and crates beside the desk. **3.75–3.85:** the lens sign glows. **3.85–3.95:** a tick pops in. |
 | 5 | 4–5 | 3.5 s | late morning | **4.00–4.05:** the van turns to face left. **4.05–4.55:** it drives back to the factory and the camera pans with it. **4.55–4.60:** the driver gets out. **4.55–4.65:** the roller door opens. **4.60–4.95:** four trips of 0.0875. On the first three, the driver takes a crate from the van and sets it on the dock. On the fourth, the driver carries the last crate to the front of the factory and stops there, facing the viewer. **End frame:** 3 crates on the dock, the driver carrying the 4th, the van empty and facing left. There is no thumbs-up (the owner's revision). |
 
-Ambient loops run only while the stage is on screen and never in reduced motion. They are not part of the
+Ambient loops run only while the scene is playing (§2) and never in reduced motion. They are not part of the
 clock and never appear in a still:
 
 - star twinkle;
@@ -261,7 +264,9 @@ New guards. Each covers a whole class of failure, not just this one:
   - the 60 % rule, and the taller-than-the-viewport case.
 - **The scene plays once** (e2e, `tests/e2e/autoplay.spec.ts`; desktop, phone and iPhone): no autoplay before 60 %
   is on screen; it plays 1 → 5 and stops at `data-t` 5.000 / `data-play` done, staying there after scrolling away
-  and back; Pause and Play; off screen pauses and on screen resumes; a pause by the button survives that; a tap
+  and back; Pause and Play; off screen pauses and on screen resumes; a Play pressed below 60 % is not undone by the next
+  scroll; the ambient loops follow `data-play`; the stage, button and dots do not move between steps (the five
+  captions share one grid cell); a pause by the button survives that; a tap
   replays from 0; Enter and Space; dot 3; a reader who arrives below finds it waiting at 0. The page's clock is
   faked and stopped (`page.clock`), so 18.5 s run in a moment.
 - **No scroll-jacking** (unit, `tests/unit/no-scroll-jacking.test.ts`): no ScrollTrigger, pin, snap or wheel

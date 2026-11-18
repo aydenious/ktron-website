@@ -39,6 +39,7 @@
   "how.pause": "暂停",
   "how.replay": "重播",
   "how.step": "第{n}步",
+  "how.steps": "步骤",
   "scene.factory": "您的工厂",
   "scene.qc": "质检10x",
   "trace.title": "每批可追溯，每个数量都有记录",

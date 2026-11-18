@@ -62,68 +62,65 @@ function mount() {
   return { section, stage, counter, caption, view, toggle, dots, painted, state: () => `${section.dataset.play} ${section.dataset.t} ${section.dataset.step}` };
 }
 
-describe('play.ts drives the scene from a clock (spec §2)', () => {
-  it('starts at the opening frame, idle, with step 1 shown and nothing running', () => {
+// What the clock decides is pinned in clock.test.ts and the e2e specs; this is the wiring: which element does what,
+// one frame loop at a time, and what the observer feeds it.
+describe('play.ts wires the clock to the page (spec §2)', () => {
+  it('starts at the opening frame, idle, with step 1 shown and no frame requested; the observer reports every 2 %', () => {
     const s = mount();
     expect(s.state()).toBe('idle 0.000 1');
     expect(s.counter.textContent).toBe('Step 1');
-    expect(s.caption.textContent).toBe('Caption 1');
-    expect(s.painted).toEqual([0]);
     expect(queue.size).toBe(0);
+    expect(options.threshold).toContain(0.6);
+    expect(options.threshold).toHaveLength(51);
   });
 
-  it('plays when the stage is first 60 % on screen, not before, and the counter moves as each step starts', () => {
+  it('plays once the stage is 60 % on screen, the counter moves as each step starts, and the ambient loops follow data-play', () => {
     const s = mount();
-    expect(options.threshold).toContain(0.6);
     notify([entry(0.5)]);
     expect(s.state()).toBe('idle 0.000 1');
+    expect(s.stage.attrs.has('data-playing')).toBe(false);
     notify([entry(0.6)]);
-    expect(s.section.dataset.play).toBe('playing');
-    run(2.9);
-    expect(s.counter.textContent).toBe('Step 1');
-    run(0.2);
+    expect(s.stage.attrs.has('data-playing')).toBe(true);
+    run(3.1);
     expect(s.counter.textContent).toBe('Step 2');
     expect(s.caption.textContent).toBe('Caption 2');
     expect(s.dots.map((d) => d.attrs.get('aria-current'))).toEqual([undefined, 'step', undefined, undefined, undefined]);
+    s.toggle.click();
+    expect(s.stage.attrs.has('data-playing')).toBe(false);
   });
 
-  it('plays 18.5 s to t 5, stops there, and never starts again by itself', () => {
+  it('plays to 5, then stops: no frame left, the loops off, and the scene does not start again by itself', () => {
     const s = mount();
     notify([entry(1)]);
-    run(18.3);
-    expect(s.section.dataset.play).toBe('playing');
-    run(0.5);
+    run(19);
     expect(s.state()).toBe('done 5.000 5');
     expect(queue.size).toBe(0);
+    expect(s.stage.attrs.has('data-playing')).toBe(false);
     notify([entry(0)]);
     notify([entry(1)]);
     expect(s.state()).toBe('done 5.000 5');
-    expect(queue.size).toBe(0);
   });
 
-  it('pauses where it is while off screen and resumes from there', () => {
+  it('goes by the last entry of a batch', () => {
+    const s = mount();
+    notify([entry(1), entry(0)]);
+    expect(s.section.dataset.play).toBe('idle');
+    notify([entry(0), entry(1)]);
+    expect(s.section.dataset.play).toBe('playing');
+  });
+
+  it('leaving the screen pauses where it is; a Play pressed below 60 % is not undone by the next scroll', () => {
     const s = mount();
     notify([entry(1)]);
     run(1);
     notify([entry(0.3)]);
-    const held = s.section.dataset.t;
     expect(s.section.dataset.play).toBe('paused');
-    run(2);
-    expect(s.section.dataset.t).toBe(held);
-    notify([entry(0.8)]);
+    s.toggle.click();
+    notify([entry(0.25)]);
+    notify([entry(0.3)]);
     expect(s.section.dataset.play).toBe('playing');
-    run(0.5);
-    expect(Number(s.section.dataset.t)).toBeGreaterThan(Number(held));
-  });
-
-  it('goes by the last entry of a batch, for the clock and for the ambient loops', () => {
-    const s = mount();
-    notify([entry(1), entry(0)]);
-    expect(s.section.dataset.play).toBe('idle');
-    expect(s.stage.attrs.has('data-playing')).toBe(false);
-    notify([entry(0), entry(1)]);
-    expect(s.section.dataset.play).toBe('playing');
-    expect(s.stage.attrs.has('data-playing')).toBe(true);
+    notify([entry(0)]);
+    expect(s.section.dataset.play).toBe('paused');
   });
 
   it('ignores a long gap between frames (a hidden tab) instead of jumping ahead', () => {
@@ -134,57 +131,16 @@ describe('play.ts drives the scene from a clock (spec §2)', () => {
     expect(Number(s.section.dataset.t)).toBeLessThan(0.05);
   });
 
-  it('the button pauses and plays; a pause by the button survives the stage leaving and returning', () => {
-    const s = mount();
-    notify([entry(1)]);
-    run(1);
-    s.toggle.click();
-    expect(s.section.dataset.play).toBe('paused');
-    const held = s.section.dataset.t;
-    run(1);
-    expect(s.section.dataset.t).toBe(held);
-    notify([entry(0)]);
-    notify([entry(1)]);
-    expect(s.section.dataset.play).toBe('paused');
-    s.toggle.click();
-    expect(s.section.dataset.play).toBe('playing');
-  });
-
-  it('a tap on the scene does what the button does, and replays a finished scene from 0', () => {
-    const s = mount();
-    notify([entry(1)]);
-    run(1);
-    s.view.click();
-    expect(s.section.dataset.play).toBe('paused');
-    s.view.click();
-    run(19);
-    expect(s.section.dataset.play).toBe('done');
-    s.view.click();
-    expect(s.section.dataset.play).toBe('playing');
-    expect(s.section.dataset.t).toBe('0.000');
-    expect(s.counter.textContent).toBe('Step 1');
-    run(19);
-    expect(s.state()).toBe('done 5.000 5');
-  });
-
-  it('the first press of Play, before the autoplay, starts the scene', () => {
+  it('the button and a tap on the scene both press; the dots jump; one frame loop at a time', () => {
     const s = mount();
     s.toggle.click();
     expect(s.state()).toBe('playing 0.000 1');
-  });
-
-  it('dot k sets the clock to k − 1 and plays on to 5, from a finished scene too', () => {
-    const s = mount();
-    notify([entry(1)]);
+    s.view.click();
+    expect(s.section.dataset.play).toBe('paused');
+    expect(queue.size).toBe(0);
     s.dots[2].click();
-    expect(s.state()).toBe('playing 2.000 3');
-    expect(s.counter.textContent).toBe('Step 3');
-    run(30);
-    expect(s.state()).toBe('done 5.000 5');
-    s.dots[1].click();
-    expect(s.state()).toBe('playing 1.000 2');
-    run(2);
-    expect(Number(s.section.dataset.t)).toBeGreaterThan(1.4);
-    expect(Number(s.section.dataset.t)).toBeLessThan(1.6);
+    s.dots[3].click();
+    expect(s.state()).toBe('playing 3.000 4');
+    expect(queue.size).toBe(1);
   });
 });

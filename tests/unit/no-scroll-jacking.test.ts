@@ -11,7 +11,8 @@ const BANNED: [what: string, re: RegExp][] = [
   ['an import of ScrollTrigger', /ScrollTrigger|scrollTrigger/],
   ['a pin (gsap pin, pinSpacing, a pin-spacer)', /\bpin(Spacing|Type)?\s*:|pin-spacer/],
   ['scroll snapping (a snap option or CSS scroll-snap)', /\bsnap\s*:|\bsnapTo\b|scroll-snap/],
-  ['a wheel or touchmove listener written out by name', /addEventListener\(\s*['"](wheel|touchmove)['"]/],
+  ['a wheel, touchmove or scroll listener written out by name', /addEventListener\(\s*['"](wheel|touchmove|scroll)['"]/],
+  ['a CSS scroll-driven animation (animation-timeline, scroll-timeline, view-timeline)', /animation-timeline|scroll-timeline|view-timeline/],
   ['a preventDefault on a scroll-making event', /(wheel|touchmove)[^;\n]*preventDefault/],
 ];
 

@@ -53,28 +53,37 @@ export function press(run: Run): Run {
   }
 }
 
-/** What the button says (and shows) in each state. */
-export const labelOf = (mode: Mode) => (mode === 'playing' ? 'pause' : mode === 'done' ? 'replay' : 'play') as 'play' | 'pause' | 'replay';
+/** How much of the stage is on screen: 'full' is the 60 % rule, 'partly' is some of it, 'gone' is none. */
+export type Level = 'full' | 'partly' | 'gone';
 
-/** The stage came on screen or left it. The first time on screen starts the scene; a finished one never starts again. */
-export function seen(run: Run, onScreen: boolean): Run {
-  if (run.mode === 'idle' && onScreen) return { t: 0, mode: 'playing', held: false };
-  if (run.mode === 'playing' && !onScreen) return { ...run, mode: 'paused' };
-  if (run.mode === 'paused' && !run.held && onScreen) return { ...run, mode: 'playing' };
+/**
+ * The stage's visibility changed from `before` to `level`. The first time it is full the scene starts; a finished
+ * scene never starts again. A playing scene pauses where it is when the stage drops below 60 % after having been
+ * full, or when it leaves the screen altogether, and a scene paused that way resumes when the stage is full again.
+ * A Play pressed while the stage was below 60 % is therefore not undone by the next scroll: it plays until the
+ * stage next leaves.
+ */
+export function seen(run: Run, level: Level, before: Level): Run {
+  if (run.mode === 'idle' && level === 'full') return { t: 0, mode: 'playing', held: false };
+  if (run.mode === 'playing' && level !== 'full' && (before === 'full' || level === 'gone')) return { ...run, mode: 'paused' };
+  if (run.mode === 'paused' && !run.held && level === 'full') return { ...run, mode: 'playing' };
   return run;
 }
 
 /** Dot k: the clock goes to the start of step k and plays on to the end. */
-export const jump = (_run: Run, k: number): Run => ({ t: k - 1, mode: 'playing', held: false });
+export const jump = (k: number): Run => ({ t: k - 1, mode: 'playing', held: false });
 
 interface Seen {
   intersectionRatio: number;
+  isIntersecting: boolean;
   intersectionRect: { height: number };
   rootBounds: { height: number } | null;
 }
 /**
- * Is the stage on screen for the clock? 60 % of it is in the viewport, or (for a stage taller than the
- * viewport, a phone held sideways) it fills 60 % of the viewport, since the first can never be reached.
+ * How much of the stage the viewport shows. 'full' is 60 % of it, or (for a stage taller than the viewport, a phone
+ * held sideways) a stage that fills 60 % of the viewport, since the first can never be reached.
  */
-export const onScreen = (e: Seen) =>
-  e.intersectionRatio >= SHOWN || (e.rootBounds !== null && e.intersectionRect.height >= SHOWN * e.rootBounds.height);
+export const levelOf = (e: Seen): Level =>
+  e.intersectionRatio >= SHOWN || (e.rootBounds !== null && e.intersectionRect.height >= SHOWN * e.rootBounds.height)
+    ? 'full'
+    : e.isIntersecting ? 'partly' : 'gone';

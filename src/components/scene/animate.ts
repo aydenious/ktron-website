@@ -47,7 +47,19 @@ export function setup(section: HTMLElement, arrival: Arrival): void {
   view.className = 'view';
   view.dataset.view = '';
   view.setAttribute('aria-hidden', 'true'); // the same words are in the visually hidden list
-  view.append(stills[0].querySelector('figure')!.cloneNode(true));
+  const figure = stills[0].querySelector('figure')!.cloneNode(true) as HTMLElement;
+  // The caption changes from step to step and wraps to one line or two. The other captions sit in the same grid cell,
+  // hidden, so the cell is as tall as the longest one and the controls below never move while the scene plays.
+  const live = figure.querySelector('[data-caption]')!;
+  for (const w of words) {
+    const copy = live.cloneNode(false) as HTMLElement;
+    copy.removeAttribute('data-caption');
+    copy.dataset.sizer = '';
+    copy.setAttribute('aria-hidden', 'true');
+    copy.textContent = w.caption;
+    live.after(copy);
+  }
+  view.append(figure);
   const stage = document.createElement('div');
   stage.className = 'stage';
   stage.dataset.stage = '';

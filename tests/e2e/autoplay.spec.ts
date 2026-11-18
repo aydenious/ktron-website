@@ -121,6 +121,7 @@ test('a click or tap on the scene does what the button does, and replays a finis
   const press = () => (hasTouch ? touch() : stage(page).locator('svg.scene').click());
   await underway(page);
   await expect(stage(page).locator('[data-view]')).toHaveCSS('cursor', 'pointer');
+  await expect(stage(page).locator('[data-view]')).toHaveCSS('user-select', 'none'); // a double click toggles twice without selecting the caption
   await press();
   await expect(how(page)).toHaveAttribute('data-play', 'paused');
   await press();
@@ -174,6 +175,42 @@ test('the controls are real buttons outside any aria-hidden part, each at least 
     const box = (await b.boundingBox())!;
     expect(Math.min(box.width, box.height)).toBeGreaterThanOrEqual(44);
   }
+});
+
+for (const [width, url] of [[320, '/'], [390, '/zh/']] as const) {
+  test(`the stage and its controls do not move from step to step (${width} px, ${url})`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 800 });
+    await open(page, url);
+    await ready(page);
+    await showStage(page);
+    const frame = async () => {
+      const [s, b, d] = await Promise.all([stage(page).boundingBox(), toggle(page).boundingBox(), dot(page, 1).boundingBox()]);
+      return { stage: s!.height, toggle: [b!.y - s!.y, b!.x], dot: [d!.y - s!.y, d!.x] };
+    };
+    const first = await frame();
+    for (const k of [1, 2, 3, 4, 5]) {
+      await dot(page, k).click();
+      await toggle(page).click(); // pause, so nothing moves while it is measured
+      expect((await state(page)).step).toBe(k);
+      expect(await frame(), `step ${k}`).toEqual(first);
+    }
+  });
+}
+
+test('a Play pressed while less than 60 % of the stage shows is not undone by the next scroll; it pauses when the stage leaves', async ({ page }) => {
+  await open(page);
+  await buildIdle(page);
+  const box = (await stage(page).boundingBox())!;
+  await nudge(page, box.y + 0.55 * box.height); // the top 55 % of the stage is above the screen, the button is on it
+  await toggle(page).click();
+  await playing(page);
+  await nudge(page, 30);
+  await nudge(page, -30);
+  await fast(page, 1);
+  await page.waitForTimeout(400); // an observer callback would have come by now
+  expect((await state(page)).play).toBe('playing');
+  await farAway(page);
+  await expect(how(page)).toHaveAttribute('data-play', 'paused');
 });
 
 test('the controls speak the page language in Chinese', async ({ page }) => {

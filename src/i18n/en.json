@@ -39,6 +39,7 @@
   "how.pause": "Pause",
   "how.replay": "Replay",
   "how.step": "Step {n}",
+  "how.steps": "Steps",
   "scene.factory": "Your factory",
   "scene.qc": "QC 10x",
   "trace.title": "Every lot traced, every count recorded",
