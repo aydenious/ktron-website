@@ -53,7 +53,7 @@ counts files, so a big scene file has to be split rather than baselined.
 | Edge cases | the plan index's Review Focus, one test each | `npm test`, Playwright | gate | not yet: Tasks 9–10 |
 | Stress | not applicable: no server, no input; the first-load weight and Lighthouse budgets stand in (Task 9) | `npx lhci autorun` | gate | not yet: Task 9 |
 | Secrets | gitleaks 8.30.1, full history | CI `quality` job | gate | 0 |
-| Dependencies | `node scripts/audit.mjs`: `npm audit` at high and critical, minus `audit-allowlist.txt` (a reason per entry; may only shrink; a stale entry fails; new entries need the owner) | CI `quality` job | gate | 1 accepted (picomatch ReDoS, no fixed release) |
+| Dependencies | `node scripts/audit.mjs`: `npm audit` at high and critical, minus `audit-allowlist.txt` (a reason per entry; may only shrink; a stale entry fails; `--base` fails an entry the target branch lacks, so new entries need the owner) | CI `quality` job | gate | 1 accepted (picomatch ReDoS, no fixed release) |
 | Risky patterns | `set:html` counted above, plus `innerHTML`/`outerHTML` writes, `insertAdjacentHTML`, `document.write`, `eval`, `new Function`; semgrep not installed (owner decision) | `npm run quality` | ratchet | 0 |
 | Docs truth and size | 600-line cap (CLAUDE.md 200), named paths and npm scripts exist | `npm run quality` | gate | 0 |
 | LLM calls | not applicable: the site makes no model calls | — | — | — |

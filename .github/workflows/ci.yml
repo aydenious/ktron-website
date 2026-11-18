@@ -44,7 +44,7 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - run: node scripts/audit.mjs
+      - run: node scripts/audit.mjs --base origin/${{ github.base_ref || 'main' }}
       # The count gate reads its baseline from the branch this PR merges into, so a PR cannot
       # raise its own baseline or rewrite the history it inherited.
       - run: npm run quality -- --base origin/${{ github.base_ref || 'main' }}

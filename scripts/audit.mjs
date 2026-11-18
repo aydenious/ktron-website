@@ -2,8 +2,10 @@
 //   npm run audit        fail on a high or critical advisory that audit-allowlist.txt does not name,
 //                        on a listed id that npm no longer reports at high or above (delete the entry),
 //                        on a malformed list line, and on an `npm audit` that could not run
+//   npm run audit -- --base origin/main   also fail on an entry that ref's list does not have:
+//                        a pull request may not accept an advisory for itself (CI passes the PR's base)
 // The list: one `GHSA-xxxx-xxxx-xxxx  <reason>` per line, `#` comments, and it may only shrink.
-import { spawnSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { readFileSync, realpathSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
@@ -51,7 +53,37 @@ export function auditProblems(audit, allowText) {
   return problems;
 }
 
+/** (the list on the branch merged into, or null when it has none, this branch's list) -> one message per added id. */
+export function addedSinceBase(baseText, headText) {
+  if (baseText === null) return [];
+  const before = new Set(parseAllowlist(baseText).ids);
+  return parseAllowlist(headText)
+    .ids.filter((id) => !before.has(id))
+    .map((id) => `${id} is not on ${ALLOWLIST} in the branch this merges into: a pull request may not accept an advisory for itself (the owner adds entries)`);
+}
+
+function baseList(baseRef) {
+  try {
+    execFileSync('git', ['rev-parse', '--verify', '--quiet', `${baseRef}^{commit}`], { stdio: 'ignore' });
+  } catch {
+    return { error: `--base ${baseRef} is not a commit in this repository` };
+  }
+  try {
+    return { text: execFileSync('git', ['show', `${baseRef}:${ALLOWLIST}`], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }) };
+  } catch {
+    console.log(`${baseRef} has no ${ALLOWLIST}; the base check is skipped`);
+    return { text: null };
+  }
+}
+
 function main() {
+  const argv = process.argv.slice(2);
+  const baseRef = argv.includes('--base') ? argv[argv.indexOf('--base') + 1]?.trim() : undefined;
+  if (argv.includes('--base') && !baseRef) {
+    console.error('--base needs a git ref');
+    process.exit(1);
+  }
+  const base = baseRef ? baseList(baseRef) : { text: null };
   const run = spawnSync('npm', ['audit', '--json'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
   let audit;
   try {
@@ -59,12 +91,13 @@ function main() {
   } catch (error) {
     audit = { error: { code: run.error?.code ?? `exit ${run.status}`, summary: `no JSON from npm audit (${error.message}) ${run.stderr ?? ''}`.trim() } };
   }
-  const problems = auditProblems(audit, readFileSync(ALLOWLIST, 'utf8'));
+  const head = readFileSync(ALLOWLIST, 'utf8');
+  const problems = [...(base.error ? [base.error] : []), ...addedSinceBase(base.text, head), ...auditProblems(audit, head)];
   if (problems.length) {
     for (const p of problems) console.error(p.replace(/\s*\n\s*/g, ' '));
     process.exit(1);
   }
-  const { ids } = parseAllowlist(readFileSync(ALLOWLIST, 'utf8'));
+  const { ids } = parseAllowlist(head);
   console.log(`audit ok (${ids.length} accepted: ${ids.join(', ') || 'none'})`);
 }
 

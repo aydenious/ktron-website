@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { auditProblems, parseAllowlist } from '../../scripts/audit.mjs';
+import { addedSinceBase, auditProblems, parseAllowlist } from '../../scripts/audit.mjs';
 
 const url = (id: string) => `https://github.com/advisories/${id}`;
 const adv = (severity: string, id: string) => ({ source: 1, name: 'pkg', title: `title ${id}`, url: url(id), severity });
@@ -85,6 +85,24 @@ describe('parseAllowlist', () => {
   });
 });
 
+// A pull request may not accept an advisory for itself: the list is read from the branch it merges into.
+describe('addedSinceBase', () => {
+  it('fails an id the base list does not have', () => {
+    const [problem, ...rest] = addedSinceBase(`${A}  reason`, `${A}  reason\n${B}  slipped in`);
+    expect(rest).toEqual([]);
+    expect(problem).toContain(B);
+  });
+
+  it('lets the list shrink or stay the same', () => {
+    expect(addedSinceBase(`${A}  reason\n${B}  reason`, `${A}  reason`)).toEqual([]);
+    expect(addedSinceBase(`${A}  reason`, `${A}  reworded reason`)).toEqual([]);
+  });
+
+  it('skips the check when the base has no list yet (the one PR that adds the file)', () => {
+    expect(addedSinceBase(null, `${A}  reason`)).toEqual([]);
+  });
+});
+
 describe('the real list and its wiring', () => {
   it('audit-allowlist.txt parses with no problems and starts with the picomatch advisory', () => {
     const { ids, problems } = parseAllowlist(readFileSync('audit-allowlist.txt', 'utf8'));
@@ -98,7 +116,7 @@ describe('the real list and its wiring', () => {
 
   it('the CI quality job runs the gate, not a bare npm audit', () => {
     const ci = readFileSync('.github/workflows/ci.yml', 'utf8');
-    expect(ci).toContain('- run: node scripts/audit.mjs');
+    expect(ci).toContain("- run: node scripts/audit.mjs --base origin/${{ github.base_ref || 'main' }}");
     expect(ci).not.toMatch(/npm audit/);
   });
 });
