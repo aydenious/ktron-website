@@ -14,7 +14,7 @@ states its net lines; every fix also adds a guard against its whole class. The g
 
 ## Commands
 
-npm ci · npm run dev · npm run check · npm run build · npm test · npm run quality · npm run verify
+npm ci · npm run dev · npm run check · npm run build · npm test · npm run quality · npm run audit · npm run verify
 
 Run npm on Node 24, the version in `.nvmrc` and CI (`nvm use`, or put `~/.nvm/versions/node/v24.*/bin` first on
 PATH). `.npmrc` sets `engine-strict`, so npm on another Node refuses to install: a lockfile written by another
@@ -22,6 +22,7 @@ npm fails `npm ci` in CI.
 
 ## Rules
 
+- The CI `npm audit` gate is `node scripts/audit.mjs` (`npm run audit`): a high or critical advisory fails unless `audit-allowlist.txt` names it with a reason (10 characters or more). The list may only shrink: a stale entry fails, and CI (`--base`) fails every entry the target branch's list lacks, also when that branch has no list. A new high advisory means update or replace the package. A PR that adds an entry fails this check; only the owner merges it, past the check; an agent never does.
 - Never name a customer anywhere: pages, alt text, file names, commits, PR text.
 - No real system screenshots, worker names or faces, prices, client logos or testimonials.
 - This repo is public: no secrets, no `.env` values, and no self-hosted CI runner (HARNESS section 9).
